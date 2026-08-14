@@ -75,6 +75,15 @@ export interface PracticalExercise {
   kompetensi?: string;
 }
 
+export interface PresentationInterviewQuestions {
+  middle_question: string;
+  middle_question_en?: string;
+  middle_expected_points?: string[];
+  hots_question: string;
+  hots_question_en?: string;
+  hots_expected_points?: string[];
+}
+
 export interface PresentationTopicItem {
   id: string;
   topic_id: string;
@@ -89,6 +98,7 @@ export interface PresentationTopicItem {
   link_panduan?: string;
   target_durasi?: string;
   rubrik?: RubricItem[];
+  interview_questions?: PresentationInterviewQuestions;
 }
 
 export type TaskType = 'PJDM' | 'AOL' | 'Teori' | 'Presentasi' | 'Oral';
@@ -116,7 +126,7 @@ export interface RubricItem {
   deskripsi?: string;
 }
 
-export type Difficulty = 'MIDDLE' | 'HOTS';
+export type Difficulty = 'LOTS' | 'MIDDLE' | 'HOTS';
 
 export interface Question {
   question_id: string;

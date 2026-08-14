@@ -13,7 +13,8 @@ import {
   AuditLog,
   AIEvalDetail,
   Material,
-  OralQuestion
+  OralQuestion,
+  PresentationInterviewQuestions
 } from '../types';
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
@@ -186,7 +187,14 @@ export const api = {
     }),
 
   // AI Gemini Features
-  generateAIQuestions: (payload: { topic_name: string; topic_id?: string; difficulty?: string; count?: number }) =>
+  generateAIQuestions: (payload: {
+    topic_name: string;
+    topic_id?: string;
+    difficulty?: string;
+    count?: number;
+    custom_instructions?: string;
+    bilingual?: boolean;
+  }) =>
     fetchJson<{ questions: Question[]; isMock: boolean }>('/api/ai/generate-questions', {
       method: 'POST',
       body: JSON.stringify(payload)
@@ -197,6 +205,20 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload || { count: 40, difficulty: 'MIDDLE_AND_HOTS' })
     }),
+
+  generateInterviewQuestions: (payload: {
+    topic_name: string;
+    topic_id?: string;
+    description?: string;
+    case_study?: string;
+  }) =>
+    fetchJson<{ interview_questions: PresentationInterviewQuestions; isMock: boolean }>(
+      '/api/ai/generate-interview-questions',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }
+    ),
 
   evaluateAIOral: (payload: { question_text: string; student_transcript: string; topic_name?: string }) =>
     fetchJson<{ eval: AIEvalDetail; isMock: boolean }>('/api/ai/evaluate-oral', {

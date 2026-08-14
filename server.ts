@@ -654,54 +654,124 @@ async function startServer() {
   // GEMINI AI INTEGRATIONS (SERVER-SIDE)
   // ==========================================
 
-  // A. AI QUESTION GENERATOR (Bilingual ID + EN)
+  // A. AI QUESTION GENERATOR (Bilingual ID + EN with Manual Topic & Difficulty Selection)
   app.post('/api/ai/generate-questions', async (req: Request, res: Response) => {
     try {
-      const { topic_name, difficulty, count = 5, bilingual = true } = req.body;
+      const {
+        topic_name = 'Persamaan Dasar Akuntansi',
+        topic_id,
+        difficulty = 'HOTS',
+        count = 5,
+        custom_instructions = '',
+        bilingual = true
+      } = req.body;
+      const numCount = Math.max(1, Math.min(20, Number(count) || 5));
       const ai = getGeminiClient();
 
-      if (!ai) {
-        // High quality fallback mock questions if GEMINI_API_KEY is missing
-        const mockQuestions: Question[] = Array.from({ length: Number(count) }, (_, i) => ({
-          question_id: 'q_gen_' + Date.now() + '_' + i,
-          topic_id: req.body.topic_id || 'top_01',
-          difficulty: difficulty || (i % 2 === 0 ? 'MIDDLE' : 'HOTS'),
-          pertanyaan_id: `[AI Mock Soal ${i + 1}] Bagaimana analisis transaksi akuntansi pada topik "${topic_name || 'Persamaan Dasar'}" untuk jurnal penyesuaian?`,
-          question_en: `[AI Mock Q ${i + 1}] How do you analyze the accounting transaction for topic "${topic_name || 'Accounting Equation'}" regarding adjusting entries?`,
-          option_a: 'Debit Beban dan Kredit Utang/Akumulasi',
-          option_b: 'Debit Kas dan Kredit Penjualan',
-          option_c: 'Debit Peralatan dan Kredit Modal',
-          option_d: 'Debit Prive dan Kredit Kas',
-          correct_answer: 'A',
-          explanation_id: 'Jurnal penyesuaian mencatat pengakuan beban yang sudah terjadi dan kewajiban/penyusutan terkait.',
-          explanation_en: 'Adjusting entries record recognized expenses and related liabilities/depreciation.',
-          kompetensi: 'Analisis Jurnal Penyesuaian'
-        }));
-        return res.json({ questions: mockQuestions, isMock: true });
+      // Find matching topic_id if possible
+      let effectiveTopicId = topic_id;
+      if (!effectiveTopicId) {
+        const found = dbTopics.find(
+          t => t.nama_topik.toLowerCase() === topic_name.trim().toLowerCase()
+        );
+        effectiveTopicId = found ? found.topic_id : 'top_01';
       }
 
-      const prompt = `Anda adalah AI Educational Expert Akuntansi SMK di Indonesia.
-Buatkan ${count} soal pilihan ganda ${difficulty || 'MIDDLE'} untuk topik Akuntansi SMK: "${topic_name || 'Persamaan Dasar Akuntansi'}".
-Setiap soal harus bilingual (Bahasa Indonesia & English) dan menyertakan pembahasan rinci dalam kedua bahasa serta kompetensi yang diuji.
+      if (!ai) {
+        // High quality dynamic fallback generator tailored to the manual topic & difficulty
+        const diffLabel = difficulty === 'LOTS' ? 'LOTS' : difficulty === 'HOTS' ? 'HOTS' : 'MIDDLE';
+        const sampleQuestions: Question[] = Array.from({ length: numCount }, (_, i) => {
+          const isHots = diffLabel === 'HOTS' || (difficulty === 'KOMBINASI' && i % 2 === 1);
+          const isLots = diffLabel === 'LOTS' || (difficulty === 'KOMBINASI' && i % 3 === 0);
+          const activeDiff = isHots ? 'HOTS' : isLots ? 'LOTS' : 'MIDDLE';
 
-Format JSON yang diwajibkan:
+          if (isLots) {
+            return {
+              question_id: 'q_gen_lots_' + Date.now() + '_' + i,
+              topic_id: effectiveTopicId,
+              difficulty: 'LOTS',
+              pertanyaan_id: `Dalam konsep dasar "${topic_name}", manakah definisi atau fungsi utama yang paling tepat menurut prinsip akuntansi berterima umum?`,
+              question_en: `In the fundamental concept of "${topic_name}", which primary definition or function is most accurate under generally accepted accounting principles?`,
+              option_a: `Mencatat dan mengelompokkan transaksi terkait ${topic_name} secara kronologis dan sistematis`,
+              option_b: `Menghilangkan kewajiban pelaporan pajak pada akhir periode`,
+              option_c: `Menggantikan seluruh pencatatan jurnal umum secara sepihak`,
+              option_d: `Menutup seluruh akun aset tanpa memerlukan bukti transaksi`,
+              correct_answer: 'A',
+              explanation_id: `Konsep dasar pada ${topic_name} berfungsi untuk memastikan seluruh transaksi dicatat, diklasifikasikan, dan disajikan sesuai kaidah baku akuntansi.`,
+              explanation_en: `The basic concept of ${topic_name} ensures that all transactions are systematically recorded, classified, and presented in accordance with standard accounting rules.`,
+              kompetensi: `Pemahaman Konsep Dasar ${topic_name}`
+            };
+          } else if (isHots) {
+            return {
+              question_id: 'q_gen_hots_' + Date.now() + '_' + i,
+              topic_id: effectiveTopicId,
+              difficulty: 'HOTS',
+              pertanyaan_id: `Sebuah entitas bisnis menghadapi kasus terkait "${topic_name}". Terjadi kesalahan pencatatan transaksi senilai Rp15.000.000 yang dicatat terbalik di Buku Besar. Bagaimanakah dampak analitis kesalahan tersebut terhadap Laporan Keuangan dan langkah koreksi yang tepat?`,
+              question_en: `A business entity encounters a case related to "${topic_name}". A transaction of IDR 15,000,000 was mistakenly reversed in the General Ledger. What is the analytical impact on the Financial Statements and the proper correcting entry?`,
+              option_a: `Laba/Aset mengalami distorsi ganda sebesar Rp30.000.000 dan perlu dibuat jurnal koreksi pembalik untuk memulihkan saldo riil`,
+              option_b: `Neraca tetap seimbang sehingga tidak perlu dilakukan penyesuaian atau jurnal koreksi apapun`,
+              option_c: `Hanya memengaruhi akun Kas tanpa berdampak pada akun nominal di Laporan Laba Rugi`,
+              option_d: `Memerlukan penutupan buku secara prematur di tengah periode berjalan`,
+              correct_answer: 'A',
+              explanation_id: `Pencatatan terbalik menimbulkan distorsi dua kali lipat (2 x nilai nominal). Jurnal koreksi khusus harus disusun untuk menetralkan salah saji dan mencatat posisi debit-kredit yang sah.`,
+              explanation_en: `A reversed recording creates a twofold distortion (2 x nominal value). A correcting entry is necessary to eliminate the misstatement and record the valid debit-credit position.`,
+              kompetensi: `Evaluasi & Analisis Kasus Lanjutan ${topic_name}`
+            };
+          } else {
+            return {
+              question_id: 'q_gen_mid_' + Date.now() + '_' + i,
+              topic_id: effectiveTopicId,
+              difficulty: 'MIDDLE',
+              pertanyaan_id: `Pada topik "${topic_name}", dilakukan transaksi operasional sebesar Rp7.500.000 secara tunai. Manakah analisis penjurnalan debit dan kredit yang benar?`,
+              question_en: `Under the topic "${topic_name}", an operational transaction of IDR 7,500,000 was executed in cash. Which debit and credit journal entry analysis is correct?`,
+              option_a: `Mendebit akun terkait ${topic_name} Rp7.500.000 dan Mengkredit Kas Rp7.500.000`,
+              option_b: `Mendebit Kas Rp7.500.000 dan Mengkredit Utang Usaha Rp7.500.000`,
+              option_c: `Mendebit Modal Pemilik Rp7.500.000 dan Mengkredit Pendapatan Rp7.500.000`,
+              option_d: `Mendebit Piutang Usaha Rp7.500.000 dan Mengkredit Kas Rp7.500.000`,
+              correct_answer: 'A',
+              explanation_id: `Transaksi pengeluaran tunai untuk pos ${topic_name} akan menambah saldo debit akun beban/aset terkait dan mengurangi saldo Kas di sisi kredit.`,
+              explanation_en: `A cash disbursement for ${topic_name} increases the debit balance of the related asset/expense and decreases Cash on credit.`,
+              kompetensi: `Penerapan Prosedur & Jurnal ${topic_name}`
+            };
+          }
+        });
+
+        return res.json({ questions: sampleQuestions, isMock: true });
+      }
+
+      const prompt = `Anda adalah AI Master Educator & Guru Ahli Akuntansi SMK di Indonesia.
+Tugas Anda adalah membuat ${numCount} soal pilihan ganda baru dengan spesifikasi berikut:
+
+1. TOPIK AKUNTANSI: "${topic_name}"
+2. TINGKAT KESULITAN: "${difficulty}" (LOTS = Pemahaman Dasar/Definisi, MIDDLE = Prosedur/Jurnal/Hitungan, HOTS = Analisis Kasus/Evaluasi/Studi Kasus Analitis, KOMBINASI = Campuran Middle & HOTS)
+${custom_instructions ? `3. INSTRUKSI / FOKUS KHUSUS DARI GURU: "${custom_instructions}"` : ''}
+
+Ketentuan Mutu Soal:
+- Soal harus otentik, kontekstual sesuai kurikulum Akuntansi SMK (Fase E/F SMK Akuntansi & Keuangan Lembaga).
+- Dibuat secara BILINGUAL (Bahasa Indonesia dan Bahasa Inggris yang akurat dalam istilah akuntansi IFRS/SAK).
+- Pilihan jawaban A, B, C, D logis, tidak ambigu, dengan satu kunci jawaban yang pasti benar.
+- Sertakan pembahasan rinci (*Explanation*) dalam Bahasa Indonesia dan Bahasa Inggris yang menjelaskan mengapa jawaban tersebut benar dan mengapa opsi lain salah.
+- Sertakan nama kompetensi dasar yang diuji.
+
+Format Output Wajib JSON Array:
 [
   {
-    "pertanyaan_id": "Pertanyaan dalam Bahasa Indonesia...",
-    "question_en": "Question in English...",
-    "option_a": "Pilihan A...",
-    "option_b": "Pilihan B...",
-    "option_c": "Pilihan C...",
-    "option_d": "Pilihan D...",
-    "correct_answer": "A", // harus salah satu "A", "B", "C", atau "D"
-    "explanation_id": "Pembahasan lengkap Bahasa Indonesia...",
+    "difficulty": "${difficulty === 'KOMBINASI' ? 'HOTS' : difficulty}",
+    "pertanyaan_id": "Teks pertanyaan dalam Bahasa Indonesia...",
+    "question_en": "Question text in English...",
+    "option_a": "Opsi A...",
+    "option_b": "Opsi B...",
+    "option_c": "Opsi C...",
+    "option_d": "Opsi D...",
+    "correct_answer": "A", // Salah satu dari "A", "B", "C", atau "D"
+    "explanation_id": "Pembahasan lengkap dan jelas dalam Bahasa Indonesia...",
     "explanation_en": "Detailed explanation in English...",
-    "kompetensi": "Kompetensi dasar akuntansi yang diuji..."
+    "kompetensi": "Kompetensi yang diuji..."
   }
 ]`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
+        model: 'gemini-3.7-flash',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -710,6 +780,7 @@ Format JSON yang diwajibkan:
             items: {
               type: Type.OBJECT,
               properties: {
+                difficulty: { type: Type.STRING },
                 pertanyaan_id: { type: Type.STRING },
                 question_en: { type: Type.STRING },
                 option_a: { type: Type.STRING },
@@ -738,23 +809,29 @@ Format JSON yang diwajibkan:
       });
 
       const parsed = JSON.parse(response.text || '[]');
-      const generatedQuestions: Question[] = parsed.map((item: any, idx: number) => ({
-        question_id: 'q_gen_' + Date.now() + '_' + idx,
-        topic_id: req.body.topic_id || 'top_01',
-        difficulty: difficulty || 'MIDDLE',
-        pertanyaan_id: item.pertanyaan_id,
-        question_en: item.question_en,
-        option_a: item.option_a,
-        option_b: item.option_b,
-        option_c: item.option_c,
-        option_d: item.option_d,
-        correct_answer: (['A', 'B', 'C', 'D'].includes(item.correct_answer) ? item.correct_answer : 'A') as 'A' | 'B' | 'C' | 'D',
-        explanation_id: item.explanation_id,
-        explanation_en: item.explanation_en,
-        kompetensi: item.kompetensi || 'Pemahaman Konsep Akuntansi'
-      }));
+      const generatedQuestions: Question[] = parsed.map((item: any, idx: number) => {
+        let qDiff: 'LOTS' | 'MIDDLE' | 'HOTS' = 'MIDDLE';
+        if (item.difficulty === 'HOTS' || difficulty === 'HOTS') qDiff = 'HOTS';
+        else if (item.difficulty === 'LOTS' || difficulty === 'LOTS') qDiff = 'LOTS';
 
-      logActivity('AI System', 'gemini', `Generate ${generatedQuestions.length} Soal AI`, topic_name);
+        return {
+          question_id: 'q_gen_' + Date.now() + '_' + idx,
+          topic_id: effectiveTopicId,
+          difficulty: qDiff,
+          pertanyaan_id: item.pertanyaan_id,
+          question_en: item.question_en || item.pertanyaan_id,
+          option_a: item.option_a,
+          option_b: item.option_b,
+          option_c: item.option_c,
+          option_d: item.option_d,
+          correct_answer: (['A', 'B', 'C', 'D'].includes(item.correct_answer) ? item.correct_answer : 'A') as 'A' | 'B' | 'C' | 'D',
+          explanation_id: item.explanation_id,
+          explanation_en: item.explanation_en || item.explanation_id,
+          kompetensi: item.kompetensi || `Kompetensi ${topic_name}`
+        };
+      });
+
+      logActivity('AI System', 'gemini', `Generate ${generatedQuestions.length} Soal AI (${difficulty})`, topic_name);
       res.json({ questions: generatedQuestions, isMock: false });
     } catch (err: any) {
       console.error('Error generating AI questions:', err);
@@ -871,7 +948,7 @@ Format JSON yang diwajibkan:
 ]`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
+        model: 'gemini-3.7-flash',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -936,6 +1013,118 @@ Format JSON yang diwajibkan:
     }
   });
 
+  // A3. AI INTERVIEW QUESTIONS GENERATOR (2 Questions: 1 Middle & 1 HOTS for Presentation Topic)
+  app.post('/api/ai/generate-interview-questions', async (req: Request, res: Response) => {
+    try {
+      const {
+        topic_name = 'Akuntansi SMK',
+        topic_id,
+        description = '',
+        case_study = ''
+      } = req.body;
+      const ai = getGeminiClient();
+
+      if (!ai) {
+        // High quality fallback interview questions
+        const fallbackInterview = {
+          middle_question: `Jelaskan alur prosedural dan pencatatan debit/kredit yang wajib dilakukan saat menangani kasus "${topic_name}" pada perusahaan jasa maupun dagang!`,
+          middle_question_en: `Explain the procedural workflow and debit/credit entries required when handling "${topic_name}" cases in service or trading businesses!`,
+          middle_expected_points: [
+            `Identifikasi akun-akun yang terpengaruh dan saldo normalnya`,
+            `Ketepatan perhitungan nominal dan ayat jurnal penyesuaian/transaksi`,
+            `Dampak langsung terhadap saldo Buku Besar dan Neraca Saldo`
+          ],
+          hots_question: `Jika terjadi sengketa audit atau anomali data di mana laporan keuangan menunjukkan ketidakseimbangan pada pos "${topic_name}", bagaimana langkah evaluasi investigatif Anda dan rekomendasi mitigasi risikonya?`,
+          hots_question_en: `In the event of an audit dispute or data anomaly where financial reports reveal imbalances in "${topic_name}", what is your investigative evaluation process and risk mitigation recommendation?`,
+          hots_expected_points: [
+            `Analisis akar penyebab (root cause) salah saji material atau distorsi saldo`,
+            `Penyusunan jurnal koreksi komprehensif dan dampaknya pada Laba/Rugi & Posisi Keuangan`,
+            `Prosedur pengendalian internal (internal control) untuk pencegahan kejadian berulang`
+          ]
+        };
+
+        logActivity('AI System', 'gemini', `Generate 2 Soal Wawancara (Middle & HOTS) [Fallback]`, topic_name);
+        return res.json({ interview_questions: fallbackInterview, isMock: true });
+      }
+
+      const prompt = `Anda adalah AI Penguji & Assessor Lomba Kompetensi Siswa (LKS) Akuntansi serta Dosen/Praktisi Akuntansi Senior.
+Buatkan persis 2 (DUA) soal wawancara lisan profesional untuk menguji kompetensi siswa/peserta setelah mereka mempresentasikan topik berikut:
+
+TOPIK PRESENTASI: "${topic_name}"
+DESKRIPSI TOPIK: "${description}"
+${case_study ? `STUDI KASUS TOPIK: "${case_study}"` : ''}
+
+Ketentuan Khusus Soal Wawancara:
+1. SOAL 1 (TINGKAT KESULITAN MIDDLE):
+   - Menguji pemahaman konsep fundamental, aturan debit/kredit, logika saldo normal akun, dan prosedur operasional akuntansi.
+   - Sediakan pertanyaan dalam Bahasa Indonesia dan Bahasa Inggris (*bilingual*).
+   - Berikan 2-4 poin kriteria jawaban yang diharapkan (*expected answer points*).
+
+2. SOAL 2 (TINGKAT KESULITAN HOTS):
+   - Menguji kemampuan analisis mendalam, evaluasi kasus anomali / salah saji akuntansi, pertimbangan prinsip SAK/PSAK, serta rekomendasi solusi analitis atau audit internal.
+   - Sediakan pertanyaan dalam Bahasa Indonesia dan Bahasa Inggris (*bilingual*).
+   - Berikan 2-4 poin kriteria jawaban yang diharapkan (*expected answer points*).
+
+Format JSON yang diwajibkan:
+{
+  "middle_question": "Pertanyaan wawancara Middle Bahasa Indonesia...",
+  "middle_question_en": "Middle interview question in English...",
+  "middle_expected_points": [
+    "Poin kunci jawaban 1",
+    "Poin kunci jawaban 2",
+    "Poin kunci jawaban 3"
+  ],
+  "hots_question": "Pertanyaan wawancara HOTS analitis Bahasa Indonesia...",
+  "hots_question_en": "HOTS analytical interview question in English...",
+  "hots_expected_points": [
+    "Poin kunci analisis 1",
+    "Poin kunci analisis 2",
+    "Poin kunci analisis 3"
+  ]
+}`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.7-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              middle_question: { type: Type.STRING },
+              middle_question_en: { type: Type.STRING },
+              middle_expected_points: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              },
+              hots_question: { type: Type.STRING },
+              hots_question_en: { type: Type.STRING },
+              hots_expected_points: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              }
+            },
+            required: [
+              'middle_question',
+              'middle_question_en',
+              'middle_expected_points',
+              'hots_question',
+              'hots_question_en',
+              'hots_expected_points'
+            ]
+          }
+        }
+      });
+
+      const parsed = JSON.parse(response.text || '{}');
+      logActivity('AI System', 'gemini', `Generate 2 Soal Wawancara (Middle & HOTS)`, topic_name);
+      res.json({ interview_questions: parsed, isMock: false });
+    } catch (err: any) {
+      console.error('Error generating interview questions:', err);
+      res.status(500).json({ error: 'Gagal membuat soal wawancara AI: ' + err.message });
+    }
+  });
+
   // B. AI ORAL RESPONSE EVALUATOR
   app.post('/api/ai/evaluate-oral', async (req: Request, res: Response) => {
     try {
@@ -989,7 +1178,7 @@ Format JSON yang diwajibkan:
 }`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
+        model: 'gemini-3.7-flash',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -1081,7 +1270,7 @@ Format JSON yang diwajibkan:
 }`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
+        model: 'gemini-3.7-flash',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -1136,7 +1325,7 @@ Anda menerapkan metode Socratic Learning:
       ];
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
+        model: 'gemini-3.7-flash',
         contents,
         config: {
           systemInstruction

@@ -26,7 +26,19 @@ import {
   Calendar,
   AlertCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Check,
+  CheckSquare,
+  Square,
+  Zap,
+  Sliders,
+  Edit3,
+  Edit,
+  Loader2,
+  Info,
+  RotateCcw,
+  MessageSquare,
+  Sparkle
 } from 'lucide-react';
 
 interface QuestionBankManagerProps {
@@ -285,12 +297,20 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
   const audioChunksRef = React.useRef<Blob[]>([]);
   const timerRef = React.useRef<any>(null);
 
-  // AI Question Generator Modal
+  // AI Question Generator State (Manual Topic, Difficulty Selection & Bilingual Support)
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
-  const [genTopicName, setGenTopicName] = useState(topics[0]?.nama_topik || 'Persamaan Dasar Akuntansi');
-  const [genDifficulty, setGenDifficulty] = useState<'MIDDLE' | 'HOTS'>('HOTS');
+  const [genTopicMode, setGenTopicMode] = useState<'manual' | 'preset'>('manual');
+  const [genManualTopic, setGenManualTopic] = useState('Jurnal Penyesuaian Beban & Pendapatan');
+  const [genPresetTopicId, setGenPresetTopicId] = useState(topics[0]?.topic_id || 'top_01');
+  const [genDifficulty, setGenDifficulty] = useState<'LOTS' | 'MIDDLE' | 'HOTS' | 'KOMBINASI'>('HOTS');
+  const [genCount, setGenCount] = useState<number>(5);
+  const [genCustomInstructions, setGenCustomInstructions] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedQuestion, setGeneratedQuestion] = useState<any>(null);
+  const [generatedQuestionsList, setGeneratedQuestionsList] = useState<Question[]>([]);
+  const [selectedGenQuestionIds, setSelectedGenQuestionIds] = useState<Set<string>>(new Set());
+  const [genSuccessMsg, setGenSuccessMsg] = useState<string | null>(null);
+  const [genErrorMsg, setGenErrorMsg] = useState<string | null>(null);
+  const [isSavingGenQuestions, setIsSavingGenQuestions] = useState(false);
 
   // AI Bulk 40 Questions Import Modal (Teacher Only)
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
@@ -309,13 +329,55 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
   const [prakSpreadsheetLink, setPrakSpreadsheetLink] = useState('');
   const [prakGuideLink, setPrakGuideLink] = useState('');
 
-  // Add Presentation Topic Modal
+  // Add Presentation Topic Modal & State
   const [isAddPresTopicOpen, setIsAddPresTopicOpen] = useState(false);
   const [presTitle, setPresTitle] = useState('');
   const [presTopicId, setPresTopicId] = useState(topics[0]?.topic_id || 'top_01');
   const [presDesc, setPresDesc] = useState('');
   const [presPointsText, setPresPointsText] = useState('');
+  const [presCaseStudy, setPresCaseStudy] = useState('');
+  const [presTipeSoal, setPresTipeSoal] = useState<'MIDDLE' | 'HOTS'>('HOTS');
   const [presSlideLink, setPresSlideLink] = useState('');
+  const [presGuideLink, setPresGuideLink] = useState('');
+  const [presDuration, setPresDuration] = useState('3-5 Menit');
+  const [presMiddleQuestion, setPresMiddleQuestion] = useState('');
+  const [presMiddleQuestionEn, setPresMiddleQuestionEn] = useState('');
+  const [presMiddleExpected, setPresMiddleExpected] = useState('');
+  const [presHotsQuestion, setPresHotsQuestion] = useState('');
+  const [presHotsQuestionEn, setPresHotsQuestionEn] = useState('');
+  const [presHotsExpected, setPresHotsExpected] = useState('');
+  const [isGeneratingPresInterviewAddModal, setIsGeneratingPresInterviewAddModal] = useState(false);
+
+  // Edit Presentation Topic Modal & State
+  const [isEditPresTopicOpen, setIsEditPresTopicOpen] = useState(false);
+  const [editingPresTopicId, setEditingPresTopicId] = useState<string | null>(null);
+  const [editPresTitle, setEditPresTitle] = useState('');
+  const [editPresTopicId, setEditPresTopicId] = useState(topics[0]?.topic_id || 'top_01');
+  const [editPresDesc, setEditPresDesc] = useState('');
+  const [editPresPointsText, setEditPresPointsText] = useState('');
+  const [editPresCaseStudy, setEditPresCaseStudy] = useState('');
+  const [editPresTipeSoal, setEditPresTipeSoal] = useState<'MIDDLE' | 'HOTS'>('HOTS');
+  const [editPresSlideLink, setEditPresSlideLink] = useState('');
+  const [editPresGuideLink, setEditPresGuideLink] = useState('');
+  const [editPresDuration, setEditPresDuration] = useState('3-5 Menit');
+  const [editPresMiddleQuestion, setEditPresMiddleQuestion] = useState('');
+  const [editPresMiddleQuestionEn, setEditPresMiddleQuestionEn] = useState('');
+  const [editPresMiddleExpected, setEditPresMiddleExpected] = useState('');
+  const [editPresHotsQuestion, setEditPresHotsQuestion] = useState('');
+  const [editPresHotsQuestionEn, setEditPresHotsQuestionEn] = useState('');
+  const [editPresHotsExpected, setEditPresHotsExpected] = useState('');
+  const [isGeneratingEditInterviewModal, setIsGeneratingEditInterviewModal] = useState(false);
+
+  // Inline AI Interview Generation for Specific Topic Card
+  const [generatingInterviewTopicId, setGeneratingInterviewTopicId] = useState<string | null>(null);
+  const [isResetDefaultTopicsModalOpen, setIsResetDefaultTopicsModalOpen] = useState(false);
+  const [presSuccessToast, setPresSuccessToast] = useState<string | null>(null);
+
+  // Presentation Filters
+  const [presSearchQuery, setPresSearchQuery] = useState('');
+  const [presTopicFilter, setPresTopicFilter] = useState('all');
+  const [presLevelFilter, setPresLevelFilter] = useState<'all' | 'MIDDLE' | 'HOTS'>('all');
+  const [presInterviewFilter, setPresInterviewFilter] = useState<'all' | 'has_interview' | 'no_interview'>('all');
 
   // Delete State
   const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null);
@@ -348,55 +410,138 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
 
   // Filter Presentation
   const filteredPresentationTopics = presentationTopicsList.filter(pt => {
+    const q = (presSearchQuery || searchQuery).toLowerCase();
     const matchesSearch =
-      pt.judul_topik.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      pt.deskripsi.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTopic = selectedTopicId === 'all' || pt.topic_id === selectedTopicId;
+      pt.judul_topik.toLowerCase().includes(q) ||
+      pt.deskripsi.toLowerCase().includes(q) ||
+      (pt.middle_hots_case_study && pt.middle_hots_case_study.toLowerCase().includes(q)) ||
+      (pt.soal_studi_kasus && pt.soal_studi_kasus.toLowerCase().includes(q)) ||
+      pt.topic_id.toLowerCase().includes(q);
 
-    return matchesSearch && matchesTopic;
+    const effTopicFilter = presTopicFilter !== 'all' ? presTopicFilter : (selectedTopicId !== 'all' ? selectedTopicId : 'all');
+    const matchesTopic = effTopicFilter === 'all' || pt.topic_id === effTopicFilter;
+    const matchesLevel = presLevelFilter === 'all' || pt.tipe_soal === presLevelFilter;
+    
+    const hasInterview = !!(pt.interview_questions?.middle_question || pt.interview_questions?.hots_question);
+    const matchesInterview =
+      presInterviewFilter === 'all'
+        ? true
+        : presInterviewFilter === 'has_interview'
+        ? hasInterview
+        : !hasInterview;
+
+    return matchesSearch && matchesTopic && matchesLevel && matchesInterview;
   });
 
-  const handleGenerateAIQuestion = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const getEffectiveTopicName = () => {
+    if (genTopicMode === 'manual') {
+      return genManualTopic.trim() || 'Akuntansi Keuangan SMK';
+    }
+    const preset = topics.find(t => t.topic_id === genPresetTopicId);
+    return preset ? preset.nama_topik : 'Akuntansi Keuangan SMK';
+  };
+
+  const getEffectiveTopicId = () => {
+    if (genTopicMode === 'preset') {
+      return genPresetTopicId;
+    }
+    const entered = genManualTopic.trim().toLowerCase();
+    const matched = topics.find(t => t.nama_topik.toLowerCase() === entered);
+    return matched ? matched.topic_id : (topics[0]?.topic_id || 'top_01');
+  };
+
+  const handleGenerateAIQuestion = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const topicName = getEffectiveTopicName();
+    if (!topicName) {
+      setGenErrorMsg('Mohon masukkan topik akuntansi terlebih dahulu.');
+      return;
+    }
+
     setIsGenerating(true);
+    setGenSuccessMsg(null);
+    setGenErrorMsg(null);
+
     try {
       const res = await api.generateAIQuestions({
-        topic_name: genTopicName,
+        topic_name: topicName,
+        topic_id: getEffectiveTopicId(),
         difficulty: genDifficulty,
-        count: 1
+        count: genCount,
+        custom_instructions: genCustomInstructions.trim() || undefined,
+        bilingual: true
       });
+
       if (res.questions && res.questions.length > 0) {
-        setGeneratedQuestion(res.questions[0]);
+        setGeneratedQuestionsList(res.questions);
+        setSelectedGenQuestionIds(new Set(res.questions.map(q => q.question_id)));
+      } else {
+        setGenErrorMsg('Tidak ada soal yang dihasilkan. Silakan coba lagi.');
       }
-    } catch (err) {
-      console.error('Failed to generate AI question:', err);
+    } catch (err: any) {
+      console.error('Failed to generate AI questions:', err);
+      setGenErrorMsg('Gagal membuat soal AI: ' + (err.message || 'Terjadi kesalahan sistem'));
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleSaveGeneratedQuestion = async () => {
-    if (!generatedQuestion) return;
+  const handleToggleSelectGenQuestion = (qId: string) => {
+    const newSet = new Set(selectedGenQuestionIds);
+    if (newSet.has(qId)) {
+      newSet.delete(qId);
+    } else {
+      newSet.add(qId);
+    }
+    setSelectedGenQuestionIds(newSet);
+  };
+
+  const handleToggleSelectAllGen = () => {
+    if (selectedGenQuestionIds.size === generatedQuestionsList.length) {
+      setSelectedGenQuestionIds(new Set());
+    } else {
+      setSelectedGenQuestionIds(new Set(generatedQuestionsList.map(q => q.question_id)));
+    }
+  };
+
+  const handleSaveSelectedGeneratedQuestions = async () => {
+    const selectedQuestions = generatedQuestionsList.filter(q => selectedGenQuestionIds.has(q.question_id));
+    if (selectedQuestions.length === 0) {
+      setGenErrorMsg('Pilih setidaknya satu soal untuk disimpan ke Bank Soal.');
+      return;
+    }
+
+    setIsSavingGenQuestions(true);
+    setGenErrorMsg(null);
     try {
-      const targetTopic = topics.find(t => t.nama_topik === genTopicName) || topics[0];
-      await api.createQuestion({
-        topic_id: targetTopic.topic_id,
-        difficulty: genDifficulty,
-        pertanyaan_id: generatedQuestion.pertanyaan_id,
-        question_en: generatedQuestion.question_en,
-        option_a: generatedQuestion.option_a,
-        option_b: generatedQuestion.option_b,
-        option_c: generatedQuestion.option_c,
-        option_d: generatedQuestion.option_d,
-        correct_answer: generatedQuestion.correct_answer,
-        explanation_id: generatedQuestion.explanation_id,
-        explanation_en: generatedQuestion.explanation_en
-      });
+      const effectiveTopicId = getEffectiveTopicId();
+      for (const q of selectedQuestions) {
+        await api.createQuestion({
+          topic_id: q.topic_id || effectiveTopicId,
+          difficulty: q.difficulty || (genDifficulty === 'KOMBINASI' ? 'HOTS' : genDifficulty),
+          pertanyaan_id: q.pertanyaan_id,
+          question_en: q.question_en,
+          option_a: q.option_a,
+          option_b: q.option_b,
+          option_c: q.option_c,
+          option_d: q.option_d,
+          correct_answer: q.correct_answer,
+          explanation_id: q.explanation_id,
+          explanation_en: q.explanation_en,
+          kompetensi: q.kompetensi || `Kompetensi ${getEffectiveTopicName()}`
+        });
+      }
+
       onRefreshData();
-      setIsGeneratorOpen(false);
-      setGeneratedQuestion(null);
-    } catch (err) {
-      console.error('Failed to save generated question:', err);
+      setGenSuccessMsg(`Berhasil menambahkan ${selectedQuestions.length} soal teori akuntansi (${getEffectiveTopicName()}) ke Bank Soal!`);
+      // Clear saved from preview or reset
+      setGeneratedQuestionsList(prev => prev.filter(q => !selectedGenQuestionIds.has(q.question_id)));
+      setSelectedGenQuestionIds(new Set());
+    } catch (err: any) {
+      console.error('Failed to save generated questions:', err);
+      setGenErrorMsg('Gagal menyimpan soal ke Bank Soal: ' + (err.message || 'Terjadi kesalahan'));
+    } finally {
+      setIsSavingGenQuestions(false);
     }
   };
 
@@ -586,34 +731,253 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
     if (!presTitle) return;
     const pointsArr = presPointsText
       ? presPointsText.split('\n').filter(p => p.trim())
-      : ['1. Pemaparan teori dasar', '2. Kasus jurnal', '3. Kesimpulan'];
+      : [
+          '1. Pemaparan konsep & urgensi dalam tata kelola keuangan',
+          '2. Mekanisme jurnal, pengakuan, dan perhitungan',
+          '3. Penyajian dalam Laporan Keuangan sesuai SAK/PSAK',
+          '4. Evaluasi kendala, mitigasi fraud & solusi akuntansi'
+        ];
+
+    let interviewObj: any = undefined;
+    if (presMiddleQuestion || presHotsQuestion) {
+      interviewObj = {
+        middle_question: presMiddleQuestion.trim() || 'Jelaskan konsep dasar dan pencatatan debit/kredit terkait topik ini!',
+        middle_question_en: presMiddleQuestionEn.trim() || undefined,
+        middle_expected_points: presMiddleExpected ? presMiddleExpected.split('\n').filter(p => p.trim()) : undefined,
+        hots_question: presHotsQuestion.trim() || 'Bagaimanakah evaluasi kritis dan mitigasi risiko bila terjadi anomali pada pos ini?',
+        hots_question_en: presHotsQuestionEn.trim() || undefined,
+        hots_expected_points: presHotsExpected ? presHotsExpected.split('\n').filter(p => p.trim()) : undefined
+      };
+    }
 
     const newItem: PresentationTopicItem = {
       id: 'pres_top_' + Date.now(),
       topic_id: presTopicId,
       judul_topik: presTitle,
-      deskripsi: presDesc || 'Topik presentasi pilihan akuntansi.',
+      deskripsi: presDesc || 'Modul presentasi dan analisis studi kasus akuntansi.',
       required_points: pointsArr,
-      middle_hots_case_study: 'Studi kasus analisis praktis akuntansi.',
+      middle_hots_case_study: presCaseStudy.trim() || 'Studi kasus analisis praktis akuntansi.',
       poin_utama: pointsArr,
-      soal_studi_kasus: 'Studi kasus analisis praktis akuntansi.',
-      tipe_soal: 'MIDDLE',
-      link_template_slide: presSlideLink || 'https://docs.google.com/presentation',
-      target_durasi: '3 - 5 Menit',
+      soal_studi_kasus: presCaseStudy.trim() || 'Studi kasus analisis praktis akuntansi.',
+      tipe_soal: presTipeSoal,
+      link_template_slide: presSlideLink.trim() || 'https://docs.google.com/presentation/d/sample-template/edit',
+      link_panduan: presGuideLink.trim() || 'https://drive.google.com/file/d/sample-panduan/view',
+      target_durasi: presDuration.trim() || '3-5 Menit',
       rubrik: [
-        { aspek: 'Penguasaan Materi', bobot: 35 },
-        { aspek: 'Penyampaian & Komunikasi', bobot: 35 },
-        { aspek: 'Kualitas Slide PPT', bobot: 30 }
-      ]
+        { aspek: 'Penguasaan Materi & Ketepatan Konsep', bobot: 35 },
+        { aspek: 'Kualitas Analisis Kasus (Middle/HOTS)', bobot: 35 },
+        { aspek: 'Penyampaian, Artikulasi & Slide PPT', bobot: 30 }
+      ],
+      interview_questions: interviewObj
     };
+
     const updated = [newItem, ...presentationTopicsList];
     setPresentationTopicsList(updated);
     localStorage.setItem('lms_presentation_topics', JSON.stringify(updated));
     setIsAddPresTopicOpen(false);
+
+    // Reset Form
     setPresTitle('');
     setPresDesc('');
     setPresPointsText('');
+    setPresCaseStudy('');
     setPresSlideLink('');
+    setPresGuideLink('');
+    setPresDuration('3-5 Menit');
+    setPresMiddleQuestion('');
+    setPresMiddleQuestionEn('');
+    setPresMiddleExpected('');
+    setPresHotsQuestion('');
+    setPresHotsQuestionEn('');
+    setPresHotsExpected('');
+
+    setPresSuccessToast('Topik presentasi baru berhasil ditambahkan ke katalog!');
+    setTimeout(() => setPresSuccessToast(null), 3000);
+  };
+
+  const handleOpenEditPresTopic = (pt: PresentationTopicItem) => {
+    setEditingPresTopicId(pt.id);
+    setEditPresTitle(pt.judul_topik || '');
+    setEditPresTopicId(pt.topic_id || topics[0]?.topic_id || 'top_01');
+    setEditPresDesc(pt.deskripsi || '');
+    setEditPresPointsText((pt.required_points || pt.poin_utama || []).join('\n'));
+    setEditPresCaseStudy(pt.middle_hots_case_study || pt.soal_studi_kasus || '');
+    setEditPresTipeSoal((pt.tipe_soal === 'HOTS' || pt.tipe_soal === 'MIDDLE') ? pt.tipe_soal : 'HOTS');
+    setEditPresSlideLink(pt.link_template_slide || '');
+    setEditPresGuideLink(pt.link_panduan || '');
+    setEditPresDuration(pt.target_durasi || '3-5 Menit');
+
+    if (pt.interview_questions) {
+      setEditPresMiddleQuestion(pt.interview_questions.middle_question || '');
+      setEditPresMiddleQuestionEn(pt.interview_questions.middle_question_en || '');
+      setEditPresMiddleExpected((pt.interview_questions.middle_expected_points || []).join('\n'));
+      setEditPresHotsQuestion(pt.interview_questions.hots_question || '');
+      setEditPresHotsQuestionEn(pt.interview_questions.hots_question_en || '');
+      setEditPresHotsExpected((pt.interview_questions.hots_expected_points || []).join('\n'));
+    } else {
+      setEditPresMiddleQuestion('');
+      setEditPresMiddleQuestionEn('');
+      setEditPresMiddleExpected('');
+      setEditPresHotsQuestion('');
+      setEditPresHotsQuestionEn('');
+      setEditPresHotsExpected('');
+    }
+
+    setIsEditPresTopicOpen(true);
+  };
+
+  const handleSaveEditPresTopic = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPresTopicId || !editPresTitle) return;
+
+    const pointsArr = editPresPointsText
+      ? editPresPointsText.split('\n').filter(p => p.trim())
+      : ['1. Konsep dasar', '2. Pencatatan jurnal', '3. Penyajian laporan'];
+
+    let interviewObj: any = undefined;
+    if (editPresMiddleQuestion || editPresHotsQuestion) {
+      interviewObj = {
+        middle_question: editPresMiddleQuestion.trim(),
+        middle_question_en: editPresMiddleQuestionEn.trim() || undefined,
+        middle_expected_points: editPresMiddleExpected ? editPresMiddleExpected.split('\n').filter(p => p.trim()) : undefined,
+        hots_question: editPresHotsQuestion.trim(),
+        hots_question_en: editPresHotsQuestionEn.trim() || undefined,
+        hots_expected_points: editPresHotsExpected ? editPresHotsExpected.split('\n').filter(p => p.trim()) : undefined
+      };
+    }
+
+    const updated = presentationTopicsList.map(pt => {
+      if (pt.id !== editingPresTopicId) return pt;
+      return {
+        ...pt,
+        judul_topik: editPresTitle,
+        topic_id: editPresTopicId,
+        deskripsi: editPresDesc,
+        required_points: pointsArr,
+        poin_utama: pointsArr,
+        middle_hots_case_study: editPresCaseStudy,
+        soal_studi_kasus: editPresCaseStudy,
+        tipe_soal: editPresTipeSoal,
+        link_template_slide: editPresSlideLink,
+        link_panduan: editPresGuideLink,
+        target_durasi: editPresDuration,
+        interview_questions: interviewObj
+      };
+    });
+
+    setPresentationTopicsList(updated);
+    localStorage.setItem('lms_presentation_topics', JSON.stringify(updated));
+    setIsEditPresTopicOpen(false);
+    setEditingPresTopicId(null);
+
+    setPresSuccessToast(`Perubahan pada "${editPresTitle}" berhasil disimpan!`);
+    setTimeout(() => setPresSuccessToast(null), 3000);
+  };
+
+  // Generate 2 Interview Questions (Middle & HOTS) for single card
+  const handleGenerateInterviewForTopic = async (pt: PresentationTopicItem) => {
+    setGeneratingInterviewTopicId(pt.id);
+    try {
+      const res = await api.generateInterviewQuestions({
+        topic_name: pt.judul_topik,
+        topic_id: pt.topic_id,
+        description: pt.deskripsi,
+        case_study: pt.middle_hots_case_study || pt.soal_studi_kasus
+      });
+
+      if (res.interview_questions) {
+        const updated = presentationTopicsList.map(item => {
+          if (item.id !== pt.id) return item;
+          return {
+            ...item,
+            interview_questions: res.interview_questions
+          };
+        });
+
+        setPresentationTopicsList(updated);
+        localStorage.setItem('lms_presentation_topics', JSON.stringify(updated));
+
+        // Auto-expand this card so user sees the 2 generated questions
+        setExpandedPresTopicIds(prev => ({ ...prev, [pt.id]: true }));
+
+        setPresSuccessToast(`Berhasil men-generate 2 soal wawancara (Middle & HOTS) untuk ${pt.judul_topik}!`);
+        setTimeout(() => setPresSuccessToast(null), 3500);
+      }
+    } catch (err: any) {
+      console.error('Failed to generate interview questions:', err);
+      alert('Gagal membuat soal wawancara AI: ' + (err.message || 'Terjadi kesalahan'));
+    } finally {
+      setGeneratingInterviewTopicId(null);
+    }
+  };
+
+  // Generate in Add Modal
+  const handleGenerateInterviewForAddModal = async () => {
+    if (!presTitle) {
+      alert('Mohon isi Judul Topik terlebih dahulu.');
+      return;
+    }
+    setIsGeneratingPresInterviewAddModal(true);
+    try {
+      const res = await api.generateInterviewQuestions({
+        topic_name: presTitle,
+        topic_id: presTopicId,
+        description: presDesc,
+        case_study: presCaseStudy
+      });
+      if (res.interview_questions) {
+        setPresMiddleQuestion(res.interview_questions.middle_question || '');
+        setPresMiddleQuestionEn(res.interview_questions.middle_question_en || '');
+        setPresMiddleExpected((res.interview_questions.middle_expected_points || []).join('\n'));
+        setPresHotsQuestion(res.interview_questions.hots_question || '');
+        setPresHotsQuestionEn(res.interview_questions.hots_question_en || '');
+        setPresHotsExpected((res.interview_questions.hots_expected_points || []).join('\n'));
+      }
+    } catch (err: any) {
+      console.error('Failed to generate interview in modal:', err);
+      alert('Gagal membuat soal wawancara AI: ' + (err.message || 'Error'));
+    } finally {
+      setIsGeneratingPresInterviewAddModal(false);
+    }
+  };
+
+  // Generate in Edit Modal
+  const handleGenerateInterviewForEditModal = async () => {
+    if (!editPresTitle) {
+      alert('Mohon isi Judul Topik terlebih dahulu.');
+      return;
+    }
+    setIsGeneratingEditInterviewModal(true);
+    try {
+      const res = await api.generateInterviewQuestions({
+        topic_name: editPresTitle,
+        topic_id: editPresTopicId,
+        description: editPresDesc,
+        case_study: editPresCaseStudy
+      });
+      if (res.interview_questions) {
+        setEditPresMiddleQuestion(res.interview_questions.middle_question || '');
+        setEditPresMiddleQuestionEn(res.interview_questions.middle_question_en || '');
+        setEditPresMiddleExpected((res.interview_questions.middle_expected_points || []).join('\n'));
+        setEditPresHotsQuestion(res.interview_questions.hots_question || '');
+        setEditPresHotsQuestionEn(res.interview_questions.hots_question_en || '');
+        setEditPresHotsExpected((res.interview_questions.hots_expected_points || []).join('\n'));
+      }
+    } catch (err: any) {
+      console.error('Failed to generate interview in edit modal:', err);
+      alert('Gagal membuat soal wawancara AI: ' + (err.message || 'Error'));
+    } finally {
+      setIsGeneratingEditInterviewModal(false);
+    }
+  };
+
+  // Reset Default 60 Topics
+  const handleResetDefaultTopics = () => {
+    setPresentationTopicsList(PRESENTATION_TOPICS_60);
+    localStorage.setItem('lms_presentation_topics', JSON.stringify(PRESENTATION_TOPICS_60));
+    setIsResetDefaultTopicsModalOpen(false);
+    setPresSuccessToast('Daftar topik presentasi telah di-reset kembali ke 60 Topik Standar LKS!');
+    setTimeout(() => setPresSuccessToast(null), 3000);
   };
 
   const getTopicName = (id: string) => {
@@ -727,6 +1091,36 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
         )}
       </div>
 
+      {/* AI GENERATOR BANNER FOR TEACHERS (TEORI AKUNTANSI) */}
+      {currentUserRole === 'teacher' && activeTab === 'teori' && (
+        <div className="p-4 bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-white flex items-center gap-2">
+                Generator Soal Teori Akuntansi Kustom
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+                  Manual Topic & Difficulty Selector
+                </span>
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Guru dapat memasukkan topik akuntansi apa saja secara manual dan menentukan tingkat kognitif soal (<span className="text-emerald-400 font-semibold">LOTS</span>, <span className="text-blue-400 font-semibold">MIDDLE</span>, atau <span className="text-rose-400 font-semibold">HOTS</span>).
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setIsGeneratorOpen(true)}
+            className="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition cursor-pointer flex items-center gap-1.5 shrink-0 shadow"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Buka AI Generator
+          </button>
+        </div>
+      )}
+
       {/* SEARCH & FILTERS BAR */}
       {activeTab !== 'praktik' && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
@@ -768,8 +1162,9 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
                 className="w-full bg-slate-950 border border-slate-800 text-xs text-slate-200 font-semibold rounded-xl px-3 py-2.5 outline-none cursor-pointer"
               >
                 <option value="all">Semua Tingkat Kesulitan</option>
-                <option value="MIDDLE">MIDDLE</option>
-                <option value="HOTS">HOTS (Higher Order Thinking)</option>
+                <option value="LOTS">LOTS (Low Order Thinking Skills)</option>
+                <option value="MIDDLE">MIDDLE (Standar Prosedural)</option>
+                <option value="HOTS">HOTS (Higher Order Thinking Skills)</option>
               </select>
             </div>
           )}
@@ -1291,67 +1686,244 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
             </div>
           </div>
 
-          {/* TOOLBAR LIPAT / BUKA SEMUA LIST TOPIK PRESENTASI */}
-          <div className="flex items-center justify-between gap-3 p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs">
-            <span className="font-bold text-slate-300">
-              Daftar Topik Presentasi ({filteredPresentationTopics.length} Item)
-            </span>
-            <div className="flex items-center space-x-2">
+          {/* SUCCESS TOAST NOTIFICATION */}
+          {presSuccessToast && (
+            <div className="p-3.5 bg-emerald-950/90 border border-emerald-500/50 rounded-xl text-xs text-emerald-300 font-semibold flex items-center justify-between shadow-lg animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{presSuccessToast}</span>
+              </div>
               <button
-                onClick={expandAllPresTopics}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
+                onClick={() => setPresSuccessToast(null)}
+                className="text-emerald-400 hover:text-white p-1"
               >
-                <ChevronDown className="w-3.5 h-3.5" />
-                Buka Semua Detail
+                <X className="w-4 h-4" />
               </button>
-              <button
-                onClick={collapseAllPresTopics}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
-              >
-                <ChevronUp className="w-3.5 h-3.5" />
-                Lipat Semua
-              </button>
+            </div>
+          )}
+
+          {/* TOOLBAR: SEARCH, FILTERS & ACTION BUTTONS */}
+          <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              {/* Search Bar */}
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={presSearchQuery}
+                  onChange={e => setPresSearchQuery(e.target.value)}
+                  placeholder="Cari judul topik, studi kasus, atau kata kunci presentasi..."
+                  className="w-full pl-9 pr-8 py-2 bg-slate-950 border border-slate-800 text-white text-xs rounded-xl outline-none focus:border-purple-500 transition placeholder:text-slate-500"
+                />
+                {presSearchQuery && (
+                  <button
+                    onClick={() => setPresSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-0.5"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Action Buttons: Add & Reset */}
+              {currentUserRole === 'teacher' && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setIsAddPresTopicOpen(true)}
+                    className="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 shadow-md shadow-purple-950/50"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Tambah Topik Baru
+                  </button>
+                  <button
+                    onClick={() => setIsResetDefaultTopicsModalOpen(true)}
+                    className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 border border-slate-700"
+                    title="Reset ke 60 Topik Standar LKS"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                    Reset 60 Topik
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Filter Row */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Topic Selector */}
+                <select
+                  value={presTopicFilter}
+                  onChange={e => setPresTopicFilter(e.target.value)}
+                  className="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-purple-500 cursor-pointer"
+                >
+                  <option value="all">Semua Kategori Topik ({presentationTopicsList.length})</option>
+                  {topics.map(t => (
+                    <option key={t.topic_id} value={t.topic_id}>
+                      {t.nama_topik}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Level Filter */}
+                <select
+                  value={presLevelFilter}
+                  onChange={e => setPresLevelFilter(e.target.value as any)}
+                  className="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-purple-500 cursor-pointer"
+                >
+                  <option value="all">Semua Level (Middle & HOTS)</option>
+                  <option value="MIDDLE">Level MIDDLE</option>
+                  <option value="HOTS">Level HOTS (Analitis)</option>
+                </select>
+
+                {/* AI Interview Filter */}
+                <select
+                  value={presInterviewFilter}
+                  onChange={e => setPresInterviewFilter(e.target.value as any)}
+                  className="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-purple-500 cursor-pointer"
+                >
+                  <option value="all">Semua Status Wawancara</option>
+                  <option value="has_interview">✨ Ada 2 Soal Wawancara AI</option>
+                  <option value="no_interview">Belum Ada Wawancara</option>
+                </select>
+              </div>
+
+              {/* Expand / Collapse All */}
+              <div className="flex items-center space-x-1.5">
+                <span className="text-[11px] text-slate-400 font-medium mr-1">
+                  Menampilkan <strong className="text-white">{filteredPresentationTopics.length}</strong> topik
+                </span>
+                <button
+                  onClick={expandAllPresTopics}
+                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
+                >
+                  <ChevronDown className="w-3.5 h-3.5 text-purple-400" />
+                  Buka Semua
+                </button>
+                <button
+                  onClick={collapseAllPresTopics}
+                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
+                >
+                  <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                  Lipat Semua
+                </button>
+              </div>
             </div>
           </div>
 
           {/* LIST OF PRESENTATION TOPICS */}
           {filteredPresentationTopics.length === 0 ? (
-            <div className="text-center py-12 bg-slate-900 border border-slate-800 rounded-2xl text-slate-400 text-xs">
-              Belum ada topik presentasi untuk filter ini.
+            <div className="text-center py-12 bg-slate-900 border border-slate-800 rounded-2xl text-slate-400 text-xs space-y-2">
+              <p className="font-semibold text-slate-300">Tidak ada topik presentasi yang cocok dengan kriteria pencarian/filter.</p>
+              <button
+                onClick={() => {
+                  setPresSearchQuery('');
+                  setPresTopicFilter('all');
+                  setPresLevelFilter('all');
+                  setPresInterviewFilter('all');
+                }}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg text-xs font-bold transition"
+              >
+                Reset Semua Filter
+              </button>
             </div>
           ) : (
-            filteredPresentationTopics.map(pt => {
+            filteredPresentationTopics.map((pt, idx) => {
               const isExpanded = !!expandedPresTopicIds[pt.id];
+              const isGeneratingThis = generatingInterviewTopicId === pt.id;
+              const hasInterviewQuestions = !!(pt.interview_questions?.middle_question || pt.interview_questions?.hots_question);
+
               return (
-                <div key={pt.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-emerald-500/40 transition shadow-sm">
+                <div
+                  key={pt.id}
+                  className={`bg-slate-900 border rounded-2xl overflow-hidden transition shadow-sm ${
+                    isExpanded ? 'border-purple-500/50 ring-1 ring-purple-500/20' : 'border-slate-800 hover:border-purple-500/30'
+                  }`}
+                >
                   {/* FOLDABLE HEADER ROW */}
                   <div
                     onClick={() => togglePresTopicExpand(pt.id)}
-                    className="p-4 bg-slate-900 hover:bg-slate-800/80 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition select-none"
+                    className="p-4 bg-slate-900 hover:bg-slate-850 cursor-pointer flex flex-col lg:flex-row lg:items-center justify-between gap-3 transition select-none"
                   >
                     <div className="flex items-center space-x-3 min-w-0 flex-1">
                       <div className="p-1 rounded-lg bg-slate-800 text-slate-300 shrink-0">
                         {isExpanded ? <ChevronUp className="w-4 h-4 text-purple-400" /> : <ChevronDown className="w-4 h-4" />}
                       </div>
 
-                      <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/40 uppercase shrink-0">
-                        Presentasi
+                      {/* Level Badge */}
+                      <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-md uppercase shrink-0 border ${
+                        pt.tipe_soal === 'HOTS'
+                          ? 'bg-rose-950/80 text-rose-300 border-rose-500/40'
+                          : 'bg-blue-950/80 text-blue-300 border-blue-500/40'
+                      }`}>
+                        {pt.tipe_soal || 'MIDDLE'}
                       </span>
 
+                      {/* Status Wawancara AI Badge */}
+                      {hasInterviewQuestions ? (
+                        <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 shrink-0">
+                          <Sparkles className="w-3 h-3 text-emerald-400" />
+                          2 Wawancara AI ✓
+                        </span>
+                      ) : (
+                        <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-md bg-slate-800 text-slate-400 border border-slate-700 shrink-0">
+                          Wawancara Belum Ada
+                        </span>
+                      )}
+
                       <div className="truncate min-w-0 flex-1">
-                        <h3 className="text-sm font-bold text-white truncate">{pt.judul_topik}</h3>
+                        <h3 className="text-sm font-bold text-white truncate flex items-center gap-1.5">
+                          <span>{pt.judul_topik}</span>
+                        </h3>
                         <p className="text-[11px] text-slate-400 truncate">• {getTopicName(pt.topic_id)}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2 shrink-0 self-end sm:self-auto" onClick={e => e.stopPropagation()}>
-                      <span className="px-3 py-1 text-xs font-bold rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1 shrink-0">
-                        <Clock className="w-3.5 h-3.5" />
-                        Target: {pt.target_durasi || '3-5 Menit'}
+                    {/* Right-Side Action Controls */}
+                    <div className="flex flex-wrap items-center gap-2 shrink-0 self-end lg:self-auto" onClick={e => e.stopPropagation()}>
+                      <span className="px-2.5 py-1 text-[11px] font-bold rounded-xl bg-purple-500/10 text-purple-300 border border-purple-500/30 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-purple-400" />
+                        {pt.target_durasi || '3-5 Menit'}
                       </span>
 
+                      {/* AI Interview Generator Button */}
                       {currentUserRole === 'teacher' && (
                         <button
+                          type="button"
+                          onClick={() => handleGenerateInterviewForTopic(pt)}
+                          disabled={isGeneratingThis}
+                          className="px-2.5 py-1 text-xs font-bold rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                          title="Generate 2 Soal Wawancara AI (Middle & HOTS)"
+                        >
+                          {isGeneratingThis ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                              <span className="text-[11px]">Generating...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                              <span className="text-[11px]">AI 2 Wawancara</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {/* Edit Topic Button */}
+                      {currentUserRole === 'teacher' && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditPresTopic(pt)}
+                          className="p-1.5 text-slate-400 hover:text-purple-300 hover:bg-purple-500/10 rounded-lg transition cursor-pointer"
+                          title="Edit Topik Presentasi"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      {/* Delete Topic Button */}
+                      {currentUserRole === 'teacher' && (
+                        <button
+                          type="button"
                           onClick={() => setDeletingPresTopicId(pt.id)}
                           className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
                           title="Hapus Topik Presentasi"
@@ -1364,25 +1936,26 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
 
                   {/* EXPANDABLE BODY CONTENT */}
                   {isExpanded && (
-                    <div className="p-5 border-t border-slate-800/80 space-y-4 bg-slate-950/40">
-                      <p className="text-xs text-slate-300 leading-relaxed">{pt.deskripsi}</p>
+                    <div className="p-5 border-t border-slate-800/80 space-y-4 bg-slate-950/50">
+                      <p className="text-xs text-slate-300 leading-relaxed font-sans">{pt.deskripsi}</p>
 
                       {/* POIN UTAMA PRESENTASI */}
                       <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-xs space-y-2">
                         <div className="font-bold text-emerald-400 flex items-center gap-1.5">
                           <Layers className="w-4 h-4" />
-                          Required Points (Poin Wajib Dipaparkan dalam Video):
+                          Required Points (Poin Wajib Dipaparkan dalam Video Presentasi):
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300">
                           {(pt.required_points || pt.poin_utama || []).map((poin, pIdx) => (
                             <div key={pIdx} className="flex items-start gap-1.5">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                              <span>{poin}</span>
+                              <span className="leading-snug">{poin}</span>
                             </div>
                           ))}
                         </div>
                       </div>
 
+                      {/* STUDI KASUS */}
                       {(pt.middle_hots_case_study || pt.soal_studi_kasus) && (
                         <div className="p-3.5 bg-amber-950/30 border border-amber-500/30 rounded-xl space-y-2 text-xs">
                           <div className="font-bold text-amber-400 flex items-center justify-between">
@@ -1391,43 +1964,185 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
                               Middle / HOTS Case Study (Perspektif Juri LKS, Praktisi & Dosen):
                             </span>
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
-                              pt.tipe_soal === 'HOTS' ? 'bg-rose-500/20 text-rose-300' : 'bg-blue-500/20 text-blue-300'
+                              pt.tipe_soal === 'HOTS' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
                             }`}>
-                              Soal {pt.tipe_soal || 'MIDDLE'}
+                              Kasus {pt.tipe_soal || 'MIDDLE'}
                             </span>
                           </div>
-                          <p className="text-slate-200 leading-relaxed font-sans whitespace-pre-line bg-slate-950/80 p-2.5 rounded-lg border border-slate-800">
+                          <p className="text-slate-200 leading-relaxed font-sans whitespace-pre-line bg-slate-950/80 p-3 rounded-lg border border-slate-800">
                             {pt.middle_hots_case_study || pt.soal_studi_kasus}
                           </p>
                         </div>
                       )}
 
-                      {/* LINKS & ACTION BUTTONS */}
-                      <div className="flex flex-wrap items-center gap-3 pt-2">
-                        {pt.link_template_slide && (
-                          <a
-                            href={pt.link_template_slide}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-3.5 py-2 text-xs font-bold rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 transition flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <Download className="w-4 h-4 text-purple-400" />
-                            Download / Buka Template Slide PPT
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        )}
+                      {/* 2 SOAL WAWANCARA (MIDDLE & HOTS) GENERATED WITH AI */}
+                      <div className="p-4 bg-slate-950 border border-purple-500/30 rounded-xl space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                          <div className="flex items-center gap-2">
+                            <div className="p-1 rounded-md bg-purple-500/20 text-purple-300">
+                              <MessageSquare className="w-4 h-4" />
+                            </div>
+                            <span className="text-xs font-bold text-purple-300">
+                              2 Soal Wawancara Lisan (Level Middle & HOTS):
+                            </span>
+                          </div>
 
-                        {pt.link_panduan && (
-                          <a
-                            href={pt.link_panduan}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <FileText className="w-4 h-4 text-slate-400" />
-                            Panduan Presentasi
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
+                          {currentUserRole === 'teacher' && (
+                            <button
+                              type="button"
+                              onClick={() => handleGenerateInterviewForTopic(pt)}
+                              disabled={isGeneratingThis}
+                              className="px-3 py-1 text-[11px] font-bold rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 transition cursor-pointer flex items-center gap-1.5 self-start sm:self-auto disabled:opacity-50"
+                            >
+                              {isGeneratingThis ? (
+                                <>
+                                  <Loader2 className="w-3 h-3 animate-spin text-purple-300" />
+                                  <span>Sedang Mengenerate...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="w-3 h-3 text-purple-400" />
+                                  <span>{hasInterviewQuestions ? 'Generate Ulang Soal AI' : 'Generate 2 Soal Wawancara AI'}</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+
+                        {hasInterviewQuestions ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                            {/* 1. MIDDLE QUESTION */}
+                            <div className="p-3.5 bg-slate-900/90 border border-blue-500/30 rounded-xl space-y-2 text-xs">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-extrabold text-blue-300 uppercase bg-blue-950/80 border border-blue-500/40 px-2 py-0.5 rounded">
+                                  1. Soal Wawancara Level MIDDLE
+                                </span>
+                              </div>
+                              <p className="font-semibold text-slate-100 leading-relaxed">
+                                "{pt.interview_questions?.middle_question}"
+                              </p>
+                              {pt.interview_questions?.middle_question_en && (
+                                <p className="text-[11px] text-slate-400 italic">
+                                  "{pt.interview_questions.middle_question_en}"
+                                </p>
+                              )}
+                              {pt.interview_questions?.middle_expected_points && pt.interview_questions.middle_expected_points.length > 0 && (
+                                <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-300 space-y-1">
+                                  <strong className="text-blue-400 font-bold block">Poin Kunci Jawaban Guru:</strong>
+                                  <ul className="list-disc pl-4 space-y-0.5 text-slate-400">
+                                    {pt.interview_questions.middle_expected_points.map((ptk, pIdx) => (
+                                      <li key={pIdx}>{ptk}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* 2. HOTS QUESTION */}
+                            <div className="p-3.5 bg-slate-900/90 border border-rose-500/30 rounded-xl space-y-2 text-xs">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-extrabold text-rose-300 uppercase bg-rose-950/80 border border-rose-500/40 px-2 py-0.5 rounded">
+                                  2. Soal Wawancara Level HOTS (Analitis)
+                                </span>
+                              </div>
+                              <p className="font-semibold text-slate-100 leading-relaxed">
+                                "{pt.interview_questions?.hots_question}"
+                              </p>
+                              {pt.interview_questions?.hots_question_en && (
+                                <p className="text-[11px] text-slate-400 italic">
+                                  "{pt.interview_questions.hots_question_en}"
+                                </p>
+                              )}
+                              {pt.interview_questions?.hots_expected_points && pt.interview_questions.hots_expected_points.length > 0 && (
+                                <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-300 space-y-1">
+                                  <strong className="text-rose-400 font-bold block">Poin Kunci Jawaban Guru:</strong>
+                                  <ul className="list-disc pl-4 space-y-0.5 text-slate-400">
+                                    {pt.interview_questions.hots_expected_points.map((ptk, pIdx) => (
+                                      <li key={pIdx}>{ptk}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-4 bg-slate-900/60 border border-dashed border-slate-800 rounded-xl text-center space-y-2">
+                            <p className="text-xs text-slate-400">
+                              Topik ini belum memiliki 2 butir soal wawancara terstandarisasi (Middle & HOTS).
+                            </p>
+                            {currentUserRole === 'teacher' && (
+                              <button
+                                type="button"
+                                onClick={() => handleGenerateInterviewForTopic(pt)}
+                                disabled={isGeneratingThis}
+                                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition cursor-pointer inline-flex items-center gap-1.5 shadow-md"
+                              >
+                                {isGeneratingThis ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                                    <span>Sedang Membuat Soal AI...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="w-4 h-4" />
+                                    <span>Generate 2 Soal Wawancara AI (Middle & HOTS) Sekarang</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* LINKS & ACTION BUTTONS */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/60">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {pt.link_template_slide && (
+                            <a
+                              href={pt.link_template_slide}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3.5 py-2 text-xs font-bold rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 transition flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <Download className="w-4 h-4 text-purple-400" />
+                              Download / Buka Template Slide PPT
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+
+                          {pt.link_panduan && (
+                            <a
+                              href={pt.link_panduan}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <FileText className="w-4 h-4 text-slate-400" />
+                              Panduan Presentasi
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+
+                        {currentUserRole === 'teacher' && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditPresTopic(pt)}
+                              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                            >
+                              <Edit className="w-3.5 h-3.5 text-purple-400" />
+                              Edit Topik
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeletingPresTopicId(pt.id)}
+                              className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                              Hapus
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1441,80 +2156,424 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
 
       {/* ================= MODAL 1: AI QUESTION GENERATOR ================= */}
       {isGeneratorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto">
-            <button onClick={() => setIsGeneratorOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer">
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-emerald-400" />
-              AI Question Generator (Bilingual Gemini 3.6 Flash)
-            </h3>
-
-            <form onSubmit={handleGenerateAIQuestion} className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">Topik Akuntansi SMK:</label>
-                <select
-                  value={genTopicName}
-                  onChange={e => setGenTopicName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-3 outline-none cursor-pointer"
-                >
-                  {topics.map(t => (
-                    <option key={t.topic_id} value={t.nama_topik}>
-                      {t.nama_topik}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">Level Kesulitan:</label>
-                <div className="flex rounded-xl bg-slate-950 p-1 border border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setGenDifficulty('MIDDLE')}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-lg cursor-pointer ${genDifficulty === 'MIDDLE' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}
-                  >
-                    MIDDLE
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setGenDifficulty('HOTS')}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-lg cursor-pointer ${genDifficulty === 'HOTS' ? 'bg-rose-600 text-white' : 'text-slate-400'}`}
-                  >
-                    HOTS (Analitis)
-                  </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md">
+          <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl relative space-y-5 max-h-[92vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-slate-800 pb-3 shrink-0">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    AI Question Generator
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      Gemini 3.7 Flash
+                    </span>
+                  </h3>
                 </div>
+                <p className="text-xs text-slate-400">
+                  Generate soal teori akuntansi bilingual (ID & EN) dari topik manual maupun kurikulum dengan kontrol tingkat kesulitan kognitif.
+                </p>
               </div>
 
               <button
-                type="submit"
-                disabled={isGenerating}
-                className="w-full py-2.5 text-xs font-bold rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition cursor-pointer flex items-center justify-center gap-2"
+                onClick={() => {
+                  setIsGeneratorOpen(false);
+                  setGenSuccessMsg(null);
+                  setGenErrorMsg(null);
+                }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
               >
-                <Sparkles className="w-4 h-4" />
-                {isGenerating ? 'Gemini AI Sedang Menyusun Soal...' : 'Generate Soal Bilingual Now'}
+                <X className="w-5 h-5" />
               </button>
-            </form>
+            </div>
 
-            {/* Generated Question Preview */}
-            {generatedQuestion && (
-              <div className="p-4 bg-slate-950 border border-emerald-500/40 rounded-xl space-y-3 text-xs">
-                <div className="font-bold text-emerald-400">Hasil Generate Soal AI:</div>
-                <p className="text-white font-medium">{generatedQuestion.pertanyaan_id}</p>
-                <p className="text-emerald-300 italic">"{generatedQuestion.question_en}"</p>
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+              {/* Notifications */}
+              {genSuccessMsg && (
+                <div className="p-3 bg-emerald-950/50 border border-emerald-500/40 rounded-xl text-xs text-emerald-300 flex items-center justify-between gap-2 animate-fadeIn">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{genSuccessMsg}</span>
+                  </div>
+                  <button onClick={() => setGenSuccessMsg(null)} className="text-emerald-400 hover:text-emerald-200">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
 
-                <div className="pt-2 flex justify-end space-x-2">
+              {genErrorMsg && (
+                <div className="p-3 bg-rose-950/50 border border-rose-500/40 rounded-xl text-xs text-rose-300 flex items-center justify-between gap-2 animate-fadeIn">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                    <span>{genErrorMsg}</span>
+                  </div>
+                  <button onClick={() => setGenErrorMsg(null)} className="text-rose-400 hover:text-rose-200">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Step 1: Input Topic Selection */}
+              <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
+                    1. Topik Akuntansi:
+                  </label>
+                  <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-[11px] font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => setGenTopicMode('manual')}
+                      className={`px-3 py-1 rounded-md transition cursor-pointer ${
+                        genTopicMode === 'manual'
+                          ? 'bg-emerald-500 text-slate-950 font-bold shadow'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      ✍️ Ketik Topik Manual
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGenTopicMode('preset')}
+                      className={`px-3 py-1 rounded-md transition cursor-pointer ${
+                        genTopicMode === 'preset'
+                          ? 'bg-emerald-500 text-slate-950 font-bold shadow'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      📋 Pilih dari 30 Topik
+                    </button>
+                  </div>
+                </div>
+
+                {genTopicMode === 'manual' ? (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={genManualTopic}
+                      onChange={e => setGenManualTopic(e.target.value)}
+                      placeholder="Masukkan nama topik, contoh: Jurnal Penyesuaian Beban Dibayar Dimuka..."
+                      className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-xl p-3 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    />
+                    {/* Quick suggestion chips */}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <span className="text-[10px] text-slate-400">Contoh Cepat:</span>
+                      {[
+                        'Jurnal Penyesuaian Beban & Pendapatan',
+                        'Rekonsiliasi Bank 4 Kolom',
+                        'Akuntansi Kas Kecil Imprest',
+                        'Persediaan FIFO Perpetual',
+                        'Penyusutan Aset Tetap Garis Lurus',
+                        'Kertas Kerja 10 Kolom',
+                        'Jurnal Penutup & Pembalik',
+                        'Pajak PPN & PPh 21'
+                      ].map(chip => (
+                        <button
+                          key={chip}
+                          type="button"
+                          onClick={() => setGenManualTopic(chip)}
+                          className="px-2 py-0.5 text-[10px] bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-300 border border-slate-800 rounded-md transition cursor-pointer"
+                        >
+                          {chip}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <select
+                      value={genPresetTopicId}
+                      onChange={e => setGenPresetTopicId(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-xl p-3 outline-none focus:border-emerald-500 cursor-pointer"
+                    >
+                      {topics.map(t => (
+                        <option key={t.topic_id} value={t.topic_id}>
+                          Topik #{t.urutan}: {t.nama_topik}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Step 2: Difficulty Level Selection */}
+              <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+                <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-emerald-400" />
+                  2. Tingkat Kesulitan Soal:
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <button
-                    onClick={handleSaveGeneratedQuestion}
-                    className="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-500 text-slate-950 cursor-pointer"
+                    type="button"
+                    onClick={() => setGenDifficulty('LOTS')}
+                    className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
+                      genDifficulty === 'LOTS'
+                        ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-md'
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                    }`}
                   >
-                    Simpan ke Bank Soal
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-xs text-emerald-400">LOTS</span>
+                      {genDifficulty === 'LOTS' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-tight">
+                      Pemahaman konsep dasar, definisi & klasifikasi akun.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setGenDifficulty('MIDDLE')}
+                    className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
+                      genDifficulty === 'MIDDLE'
+                        ? 'bg-blue-500/15 border-blue-500 text-white shadow-md'
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-xs text-blue-400">MIDDLE</span>
+                      {genDifficulty === 'MIDDLE' && <Check className="w-3.5 h-3.5 text-blue-400" />}
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-tight">
+                      Prosedur transaksi, penjurnalan & perhitungan nilai standar.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setGenDifficulty('HOTS')}
+                    className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
+                      genDifficulty === 'HOTS'
+                        ? 'bg-rose-500/15 border-rose-500 text-white shadow-md'
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-xs text-rose-400">HOTS</span>
+                      {genDifficulty === 'HOTS' && <Check className="w-3.5 h-3.5 text-rose-400" />}
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-tight">
+                      Studi kasus kompleks, koreksi salah jurnal & analisis distorsi laporan.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setGenDifficulty('KOMBINASI')}
+                    className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
+                      genDifficulty === 'KOMBINASI'
+                        ? 'bg-purple-500/15 border-purple-500 text-white shadow-md'
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-xs text-purple-400">KOMBINASI</span>
+                      {genDifficulty === 'KOMBINASI' && <Check className="w-3.5 h-3.5 text-purple-400" />}
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-tight">
+                      Campuran seimbang soal Middle dan soal HOTS analitis.
+                    </p>
                   </button>
                 </div>
               </div>
-            )}
+
+              {/* Step 3: Count and Custom Instructions */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
+                  <label className="text-xs font-bold text-slate-200 block">
+                    Jumlah Soal:
+                  </label>
+                  <div className="flex rounded-lg bg-slate-900 p-0.5 border border-slate-800">
+                    {[5, 10, 15, 20].map(cnt => (
+                      <button
+                        key={cnt}
+                        type="button"
+                        onClick={() => setGenCount(cnt)}
+                        className={`flex-1 py-1.5 text-xs font-bold rounded-md transition cursor-pointer ${
+                          genCount === cnt
+                            ? 'bg-emerald-500 text-slate-950 shadow'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {cnt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2 bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
+                  <label className="text-xs font-bold text-slate-200 block">
+                    Fokus Khusus / Instruksi Guru (Opsional):
+                  </label>
+                  <input
+                    type="text"
+                    value={genCustomInstructions}
+                    onChange={e => setGenCustomInstructions(e.target.value)}
+                    placeholder="Contoh: Fokus pada kasus retur penjualan tunai atau angka transaksi ratusan juta..."
+                    className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-lg px-3 py-1.5 outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              {/* Action Button: Generate Now */}
+              <button
+                type="button"
+                onClick={() => handleGenerateAIQuestion()}
+                disabled={isGenerating}
+                className="w-full py-3 text-xs font-bold rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                    <span>Gemini AI Sedang Menyusun Soal Akuntansi Bilingual...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 text-slate-950" />
+                    <span>Generate {genCount} Soal {genDifficulty} untuk "{getEffectiveTopicName()}"</span>
+                  </>
+                )}
+              </button>
+
+              {/* Generated Questions Preview Cards */}
+              {generatedQuestionsList.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-950 border border-emerald-500/30 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleToggleSelectAllGen}
+                        className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white cursor-pointer"
+                      >
+                        {selectedGenQuestionIds.size === generatedQuestionsList.length ? (
+                          <CheckSquare className="w-4 h-4 text-emerald-400" />
+                        ) : (
+                          <Square className="w-4 h-4 text-slate-500" />
+                        )}
+                        <span className="font-semibold">
+                          Pilih Semua ({selectedGenQuestionIds.size}/{generatedQuestionsList.length})
+                        </span>
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSaveSelectedGeneratedQuestions}
+                      disabled={isSavingGenQuestions || selectedGenQuestionIds.size === 0}
+                      className="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition cursor-pointer flex items-center gap-1.5 shadow disabled:opacity-50"
+                    >
+                      {isSavingGenQuestions ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      )}
+                      <span>Simpan ({selectedGenQuestionIds.size}) Soal ke Bank Soal</span>
+                    </button>
+                  </div>
+
+                  {/* Question Cards */}
+                  <div className="space-y-3">
+                    {generatedQuestionsList.map((q, idx) => {
+                      const isSelected = selectedGenQuestionIds.has(q.question_id);
+                      return (
+                        <div
+                          key={q.question_id || idx}
+                          onClick={() => handleToggleSelectGenQuestion(q.question_id)}
+                          className={`p-4 rounded-xl border transition cursor-pointer space-y-3 ${
+                            isSelected
+                              ? 'bg-slate-950 border-emerald-500/60 shadow-md'
+                              : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                          }`}
+                        >
+                          {/* Card Header */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs font-bold text-white">Soal #{idx + 1}</span>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
+                                q.difficulty === 'HOTS'
+                                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                  : q.difficulty === 'LOTS'
+                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                  : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                              }`}>
+                                {q.difficulty}
+                              </span>
+                              {q.kompetensi && (
+                                <span className="text-[10px] font-semibold text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                                  {q.kompetensi}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="shrink-0">
+                              {isSelected ? (
+                                <CheckSquare className="w-4 h-4 text-emerald-400" />
+                              ) : (
+                                <Square className="w-4 h-4 text-slate-600" />
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Question Text */}
+                          <div className="space-y-1 text-xs">
+                            <p className="text-white font-medium leading-relaxed">
+                              {q.pertanyaan_id}
+                            </p>
+                            <p className="text-emerald-300/90 italic text-[11px] leading-relaxed">
+                              "{q.question_en}"
+                            </p>
+                          </div>
+
+                          {/* Options Grid */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                            {(['A', 'B', 'C', 'D'] as const).map(optKey => {
+                              const optField = `option_${optKey.toLowerCase()}` as keyof Question;
+                              const optVal = q[optField] as string;
+                              const isCorrect = q.correct_answer === optKey;
+
+                              return (
+                                <div
+                                  key={optKey}
+                                  className={`p-2 rounded-lg text-xs border flex items-start gap-2 ${
+                                    isCorrect
+                                      ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300 font-semibold'
+                                      : 'bg-slate-900 border-slate-800 text-slate-300'
+                                  }`}
+                                >
+                                  <span className={`w-4 h-4 rounded text-[10px] font-bold flex items-center justify-center shrink-0 ${
+                                    isCorrect ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'
+                                  }`}>
+                                    {optKey}
+                                  </span>
+                                  <span className="leading-snug">{optVal}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Explanation */}
+                          <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg space-y-1 text-[11px]">
+                            <div className="font-bold text-emerald-400 flex items-center gap-1">
+                              <Info className="w-3.5 h-3.5" />
+                              Pembahasan & Analisis:
+                            </div>
+                            <p className="text-slate-300 leading-relaxed">{q.explanation_id}</p>
+                            {q.explanation_en && (
+                              <p className="text-slate-400 italic text-[10px] leading-relaxed border-t border-slate-800 pt-1">
+                                {q.explanation_en}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1625,79 +2684,253 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
 
       {/* ================= MODAL 3: TAMBAH TOPIK PRESENTASI ================= */}
       {isAddPresTopicOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto">
-            <button onClick={() => setIsAddPresTopicOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer">
-              <X className="w-5 h-5" />
-            </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+          <div className="bg-slate-900 border border-purple-500/30 rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl relative space-y-4 max-h-[92vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-slate-800 pb-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                  <Video className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    Tambah Topik Presentasi Baru
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                      LKS Akuntansi
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Masukkan judul topik, studi kasus, poin pemaparan, serta generate 2 butir soal wawancara.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAddPresTopicOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Video className="w-5 h-5 text-emerald-400" />
-              Tambah Topik Presentasi Baru
-            </h3>
+            <form onSubmit={handleAddPresTopic} className="space-y-4 text-xs flex-1 overflow-y-auto pr-1">
+              {/* Row 1: Title & Category */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Judul Topik Presentasi:</label>
+                  <input
+                    type="text"
+                    required
+                    value={presTitle}
+                    onChange={e => setPresTitle(e.target.value)}
+                    placeholder="misal: Topik #61: Rekonsiliasi Fiskal & PPh Badan"
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-purple-500"
+                  />
+                </div>
 
-            <form onSubmit={handleAddPresTopic} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-400 font-bold mb-1">Judul Topik Presentasi:</label>
-                <input
-                  type="text"
-                  required
-                  value={presTitle}
-                  onChange={e => setPresTitle(e.target.value)}
-                  placeholder="misal: Topik #5: Analisis Penyesuaian Beban Dibayar Dimuka"
-                  className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-emerald-500"
-                />
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Kategori Topik Akuntansi:</label>
+                  <select
+                    value={presTopicId}
+                    onChange={e => setPresTopicId(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-purple-500 cursor-pointer"
+                  >
+                    {topics.map(t => (
+                      <option key={t.topic_id} value={t.topic_id}>
+                        {t.nama_topik}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-slate-400 font-bold mb-1">Topik Utama Akuntansi:</label>
-                <select
-                  value={presTopicId}
-                  onChange={e => setPresTopicId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none cursor-pointer"
-                >
-                  {topics.map(t => (
-                    <option key={t.topic_id} value={t.topic_id}>
-                      {t.nama_topik}
-                    </option>
-                  ))}
-                </select>
+              {/* Row 2: Level & Target Duration */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Tingkat Kesulitan Studi Kasus:</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPresTipeSoal('MIDDLE')}
+                      className={`py-2 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                        presTipeSoal === 'MIDDLE'
+                          ? 'bg-blue-500/20 border-blue-500/50 text-blue-300'
+                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <span>MIDDLE (Aplikasi)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPresTipeSoal('HOTS')}
+                      className={`py-2 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                        presTipeSoal === 'HOTS'
+                          ? 'bg-rose-500/20 border-rose-500/50 text-rose-300'
+                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <span>HOTS (Analitis/Juri)</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Target Durasi Presentasi:</label>
+                  <input
+                    type="text"
+                    value={presDuration}
+                    onChange={e => setPresDuration(e.target.value)}
+                    placeholder="3-5 Menit"
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-purple-500"
+                  />
+                </div>
               </div>
 
+              {/* Description */}
               <div>
-                <label className="block text-slate-400 font-bold mb-1">Deskripsi / Studi Kasus:</label>
+                <label className="block text-slate-300 font-bold mb-1">Deskripsi Singkat Topik:</label>
                 <textarea
                   rows={2}
                   value={presDesc}
                   onChange={e => setPresDesc(e.target.value)}
-                  placeholder="Gambarkan kasus yang perlu dipresentasikan oleh siswa..."
-                  className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-emerald-500"
+                  placeholder="Gambarkan ringkasan konsep akuntansi yang harus dipahami siswa..."
+                  className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-purple-500"
                 />
               </div>
 
+              {/* Case Study */}
               <div>
-                <label className="block text-slate-400 font-bold mb-1">Poin-Poin Utama Wajib Dipaparkan (1 baris per poin):</label>
+                <label className="block text-slate-300 font-bold mb-1">Studi Kasus Analisis (Perspektif Juri & Praktisi):</label>
                 <textarea
-                  rows={4}
+                  rows={2}
+                  value={presCaseStudy}
+                  onChange={e => setPresCaseStudy(e.target.value)}
+                  placeholder="Kasus transaksi nyata perusahaan yang memerlukan analisis kritis siswa..."
+                  className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-purple-500"
+                />
+              </div>
+
+              {/* Required Points */}
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">Poin-Poin Wajib Dipaparkan (1 baris per poin):</label>
+                <textarea
+                  rows={3}
                   value={presPointsText}
                   onChange={e => setPresPointsText(e.target.value)}
-                  placeholder="1. Pengenalan konsep penyesuaian&#10;2. Jurnal debit kredit&#10;3. Pengaruh ke laporan laba rugi"
-                  className="w-full bg-slate-950 border border-slate-800 text-white font-mono rounded-xl p-2.5 outline-none focus:border-emerald-500"
+                  placeholder="1. Pemaparan konsep & urgensi&#10;2. Mekanisme jurnal penyesuaian&#10;3. Penyajian dalam laporan keuangan&#10;4. Mitigasi risiko & solusi"
+                  className="w-full bg-slate-950 border border-slate-800 text-white font-mono rounded-xl p-2.5 outline-none focus:border-purple-500"
                 />
               </div>
 
-              <div>
-                <label className="block text-slate-400 font-bold mb-1">Link Template Slide PPT / Google Slides (Opsional):</label>
-                <input
-                  type="url"
-                  value={presSlideLink}
-                  onChange={e => setPresSlideLink(e.target.value)}
-                  placeholder="https://docs.google.com/presentation/d/..."
-                  className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-emerald-500"
-                />
+              {/* SECTION: 2 INTERVIEW QUESTIONS WITH AI GENERATOR */}
+              <div className="p-4 bg-slate-950 border border-purple-500/30 rounded-xl space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5 font-bold text-purple-300">
+                    <Sparkles className="w-4 h-4 text-purple-400" />
+                    <span>2 Soal Wawancara AI (Middle & HOTS)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleGenerateInterviewForAddModal}
+                    disabled={isGeneratingPresInterviewAddModal || !presTitle}
+                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {isGeneratingPresInterviewAddModal ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Generating AI...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Generate Otomatis dengan AI</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Middle Question */}
+                <div className="space-y-2 p-3 bg-slate-900 border border-blue-500/30 rounded-lg">
+                  <span className="text-[10px] font-extrabold text-blue-300 uppercase bg-blue-950/80 border border-blue-500/40 px-2 py-0.5 rounded inline-block">
+                    1. Soal Wawancara Middle (Konseptual & Prosedural)
+                  </span>
+                  <input
+                    type="text"
+                    value={presMiddleQuestion}
+                    onChange={e => setPresMiddleQuestion(e.target.value)}
+                    placeholder="Pertanyaan bahasa Indonesia..."
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-lg p-2 outline-none focus:border-blue-500"
+                  />
+                  <input
+                    type="text"
+                    value={presMiddleQuestionEn}
+                    onChange={e => setPresMiddleQuestionEn(e.target.value)}
+                    placeholder="English question (optional)..."
+                    className="w-full bg-slate-950 border border-slate-800 text-slate-300 italic text-[11px] rounded-lg p-2 outline-none"
+                  />
+                  <textarea
+                    rows={2}
+                    value={presMiddleExpected}
+                    onChange={e => setPresMiddleExpected(e.target.value)}
+                    placeholder="Poin-poin kunci jawaban guru (1 baris per poin)..."
+                    className="w-full bg-slate-950 border border-slate-800 text-slate-300 text-[11px] rounded-lg p-2 outline-none"
+                  />
+                </div>
+
+                {/* HOTS Question */}
+                <div className="space-y-2 p-3 bg-slate-900 border border-rose-500/30 rounded-lg">
+                  <span className="text-[10px] font-extrabold text-rose-300 uppercase bg-rose-950/80 border border-rose-500/40 px-2 py-0.5 rounded inline-block">
+                    2. Soal Wawancara HOTS (Analitis & Evaluatif)
+                  </span>
+                  <input
+                    type="text"
+                    value={presHotsQuestion}
+                    onChange={e => setPresHotsQuestion(e.target.value)}
+                    placeholder="Pertanyaan analitis / evaluatif bahasa Indonesia..."
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-lg p-2 outline-none focus:border-rose-500"
+                  />
+                  <input
+                    type="text"
+                    value={presHotsQuestionEn}
+                    onChange={e => setPresHotsQuestionEn(e.target.value)}
+                    placeholder="English analytical question (optional)..."
+                    className="w-full bg-slate-950 border border-slate-800 text-slate-300 italic text-[11px] rounded-lg p-2 outline-none"
+                  />
+                  <textarea
+                    rows={2}
+                    value={presHotsExpected}
+                    onChange={e => setPresHotsExpected(e.target.value)}
+                    placeholder="Poin-poin kunci jawaban guru (1 baris per poin)..."
+                    className="w-full bg-slate-950 border border-slate-800 text-slate-300 text-[11px] rounded-lg p-2 outline-none"
+                  />
+                </div>
               </div>
 
-              <div className="pt-2 flex justify-end space-x-2">
+              {/* Links */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Link Template Slide PPT (Opsional):</label>
+                  <input
+                    type="url"
+                    value={presSlideLink}
+                    onChange={e => setPresSlideLink(e.target.value)}
+                    placeholder="https://docs.google.com/presentation/d/..."
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Link Panduan Presentasi (Opsional):</label>
+                  <input
+                    type="url"
+                    value={presGuideLink}
+                    onChange={e => setPresGuideLink(e.target.value)}
+                    placeholder="https://drive.google.com/file/d/..."
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-purple-500"
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-3 border-t border-slate-800 flex justify-end space-x-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsAddPresTopicOpen(false)}
@@ -1707,12 +2940,307 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 font-bold rounded-xl bg-emerald-500 text-slate-950 cursor-pointer"
+                  className="px-5 py-2.5 font-bold rounded-xl bg-purple-600 hover:bg-purple-500 text-white cursor-pointer shadow-lg transition"
                 >
                   Simpan Topik Presentasi
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL 4: EDIT TOPIK PRESENTASI ================= */}
+      {isEditPresTopicOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+          <div className="bg-slate-900 border border-purple-500/30 rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl relative space-y-4 max-h-[92vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-slate-800 pb-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                  <Edit className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    Edit Topik Presentasi
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                      ID: {editingPresTopicId}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Perbarui judul, studi kasus, durasi, rubrik, atau sesuaikan 2 butir soal wawancara AI.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsEditPresTopicOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditPresTopic} className="space-y-4 text-xs flex-1 overflow-y-auto pr-1">
+              {/* Row 1: Title & Category */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Judul Topik Presentasi:</label>
+                  <input
+                    type="text"
+                    required
+                    value={editPresTitle}
+                    onChange={e => setEditPresTitle(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Kategori Topik Akuntansi:</label>
+                  <select
+                    value={editPresTopicId}
+                    onChange={e => setEditPresTopicId(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-purple-500 cursor-pointer"
+                  >
+                    {topics.map(t => (
+                      <option key={t.topic_id} value={t.topic_id}>
+                        {t.nama_topik}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 2: Level & Target Duration */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Tingkat Kesulitan Studi Kasus:</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditPresTipeSoal('MIDDLE')}
+                      className={`py-2 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                        editPresTipeSoal === 'MIDDLE'
+                          ? 'bg-blue-500/20 border-blue-500/50 text-blue-300'
+                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <span>MIDDLE (Aplikasi)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditPresTipeSoal('HOTS')}
+                      className={`py-2 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                        editPresTipeSoal === 'HOTS'
+                          ? 'bg-rose-500/20 border-rose-500/50 text-rose-300'
+                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <span>HOTS (Analitis/Juri)</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Target Durasi Presentasi:</label>
+                  <input
+                    type="text"
+                    value={editPresDuration}
+                    onChange={e => setEditPresDuration(e.target.value)}
+                    placeholder="3-5 Menit"
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-purple-500"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">Deskripsi Singkat Topik:</label>
+                <textarea
+                  rows={2}
+                  value={editPresDesc}
+                  onChange={e => setEditPresDesc(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-purple-500"
+                />
+              </div>
+
+              {/* Case Study */}
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">Studi Kasus Analisis (Perspektif Juri & Praktisi):</label>
+                <textarea
+                  rows={2}
+                  value={editPresCaseStudy}
+                  onChange={e => setEditPresCaseStudy(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-purple-500"
+                />
+              </div>
+
+              {/* Required Points */}
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">Poin-Poin Wajib Dipaparkan (1 baris per poin):</label>
+                <textarea
+                  rows={3}
+                  value={editPresPointsText}
+                  onChange={e => setEditPresPointsText(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 text-white font-mono rounded-xl p-2.5 outline-none focus:border-purple-500"
+                />
+              </div>
+
+              {/* SECTION: 2 INTERVIEW QUESTIONS WITH AI GENERATOR */}
+              <div className="p-4 bg-slate-950 border border-purple-500/30 rounded-xl space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5 font-bold text-purple-300">
+                    <Sparkles className="w-4 h-4 text-purple-400" />
+                    <span>2 Soal Wawancara AI (Middle & HOTS)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleGenerateInterviewForEditModal}
+                    disabled={isGeneratingEditInterviewModal || !editPresTitle}
+                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {isGeneratingEditInterviewModal ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Regenerating AI...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Regenerate dengan AI</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Middle Question */}
+                <div className="space-y-2 p-3 bg-slate-900 border border-blue-500/30 rounded-lg">
+                  <span className="text-[10px] font-extrabold text-blue-300 uppercase bg-blue-950/80 border border-blue-500/40 px-2 py-0.5 rounded inline-block">
+                    1. Soal Wawancara Middle (Konseptual & Prosedural)
+                  </span>
+                  <input
+                    type="text"
+                    value={editPresMiddleQuestion}
+                    onChange={e => setEditPresMiddleQuestion(e.target.value)}
+                    placeholder="Pertanyaan bahasa Indonesia..."
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-lg p-2 outline-none focus:border-blue-500"
+                  />
+                  <input
+                    type="text"
+                    value={editPresMiddleQuestionEn}
+                    onChange={e => setEditPresMiddleQuestionEn(e.target.value)}
+                    placeholder="English question (optional)..."
+                    className="w-full bg-slate-950 border border-slate-800 text-slate-300 italic text-[11px] rounded-lg p-2 outline-none"
+                  />
+                  <textarea
+                    rows={2}
+                    value={editPresMiddleExpected}
+                    onChange={e => setEditPresMiddleExpected(e.target.value)}
+                    placeholder="Poin-poin kunci jawaban guru (1 baris per poin)..."
+                    className="w-full bg-slate-950 border border-slate-800 text-slate-300 text-[11px] rounded-lg p-2 outline-none"
+                  />
+                </div>
+
+                {/* HOTS Question */}
+                <div className="space-y-2 p-3 bg-slate-900 border border-rose-500/30 rounded-lg">
+                  <span className="text-[10px] font-extrabold text-rose-300 uppercase bg-rose-950/80 border border-rose-500/40 px-2 py-0.5 rounded inline-block">
+                    2. Soal Wawancara HOTS (Analitis & Evaluatif)
+                  </span>
+                  <input
+                    type="text"
+                    value={editPresHotsQuestion}
+                    onChange={e => setEditPresHotsQuestion(e.target.value)}
+                    placeholder="Pertanyaan analitis / evaluatif bahasa Indonesia..."
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-lg p-2 outline-none focus:border-rose-500"
+                  />
+                  <input
+                    type="text"
+                    value={editPresHotsQuestionEn}
+                    onChange={e => setEditPresHotsQuestionEn(e.target.value)}
+                    placeholder="English analytical question (optional)..."
+                    className="w-full bg-slate-950 border border-slate-800 text-slate-300 italic text-[11px] rounded-lg p-2 outline-none"
+                  />
+                  <textarea
+                    rows={2}
+                    value={editPresHotsExpected}
+                    onChange={e => setEditPresHotsExpected(e.target.value)}
+                    placeholder="Poin-poin kunci jawaban guru (1 baris per poin)..."
+                    className="w-full bg-slate-950 border border-slate-800 text-slate-300 text-[11px] rounded-lg p-2 outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Links */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Link Template Slide PPT (Opsional):</label>
+                  <input
+                    type="url"
+                    value={editPresSlideLink}
+                    onChange={e => setEditPresSlideLink(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Link Panduan Presentasi (Opsional):</label>
+                  <input
+                    type="url"
+                    value={editPresGuideLink}
+                    onChange={e => setEditPresGuideLink(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-purple-500"
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-3 border-t border-slate-800 flex justify-end space-x-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsEditPresTopicOpen(false)}
+                  className="px-4 py-2 font-bold text-slate-400 hover:text-white"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 font-bold rounded-xl bg-purple-600 hover:bg-purple-500 text-white cursor-pointer shadow-lg transition"
+                >
+                  Simpan Perubahan Topik
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL 5: RESET DEFAULT 60 TOPICS ================= */}
+      {isResetDefaultTopicsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-amber-400">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <RotateCcw className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-white">Reset ke 60 Topik Standar?</h3>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Tindakan ini akan mengembalikan seluruh daftar topik presentasi ke <strong>60 Topik Standar Kurikulum LKS Akuntansi</strong> dan menghapus perubahan atau topik kustom yang Anda tambahkan.
+            </p>
+            <div className="pt-3 flex justify-end space-x-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsResetDefaultTopicsModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white rounded-xl"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleResetDefaultTopics}
+                className="px-4 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl transition cursor-pointer"
+              >
+                Ya, Reset 60 Topik
+              </button>
+            </div>
           </div>
         </div>
       )}
