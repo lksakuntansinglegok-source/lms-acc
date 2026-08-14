@@ -1,0 +1,6 @@
+{
+  "name": "LMS Akuntansi SMK",
+  "description": "LMS Pembelajaran Akuntansi SMK Berbasis Google AI Studio dengan Modul PJDM, AOL, Bank Soal Bilingual, AI Oral Interview, Presentasi, dan Analitik Guru.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
