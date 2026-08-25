@@ -14,7 +14,8 @@ import {
   AIEvalDetail,
   Material,
   OralQuestion,
-  PresentationInterviewQuestions
+  PresentationInterviewQuestions,
+  AppNotification
 } from '../types';
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
@@ -63,6 +64,39 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ password })
     }),
+  resetStudentToZero: (studentId: string) =>
+    fetchJson<{ success: boolean; message: string; student: Student; progress?: StudentProgress }>(
+      `/api/students/${studentId}/reset-to-zero`,
+      { method: 'POST' }
+    ),
+  resetAllStudentsToZero: (target_class?: string) =>
+    fetchJson<{ success: boolean; message: string; studentsCount: number }>(
+      '/api/system/reset-all-students-to-zero',
+      { method: 'POST', body: JSON.stringify({ target_class }) }
+    ),
+  wipeAllStudentsAndWork: (password: string) =>
+    fetchJson<{
+      success: boolean;
+      message: string;
+      deletedStudentsCount: number;
+      deletedSubmissionsCount: number;
+    }>('/api/system/wipe-all-students-and-work', {
+      method: 'POST',
+      body: JSON.stringify({ password })
+    }),
+  getBackupDataset: () =>
+    fetchJson<{
+      timestamp: string;
+      students: Student[];
+      tasks: Task[];
+      topics: Topic[];
+      submissions: Submission[];
+      quizResults: QuizResult[];
+      oralSubmissions: OralSubmission[];
+      presentationSubmissions: PresentationSubmission[];
+      progress: StudentProgress[];
+      auditLogs: AuditLog[];
+    }>('/api/system/backup-dataset'),
 
   // Topics
   getTopics: () => fetchJson<Topic[]>('/api/topics'),
@@ -241,5 +275,30 @@ export const api = {
     fetchJson<{ reply: string }>('/api/ai/socratic-tutor', {
       method: 'POST',
       body: JSON.stringify(payload)
+    }),
+
+  // In-App Notifications
+  getNotifications: (studentId?: string) => {
+    const url = studentId ? `/api/notifications?student_id=${encodeURIComponent(studentId)}` : '/api/notifications';
+    return fetchJson<AppNotification[]>(url);
+  },
+  createNotification: (notif: Partial<AppNotification>) =>
+    fetchJson<AppNotification>('/api/notifications', {
+      method: 'POST',
+      body: JSON.stringify(notif)
+    }),
+  markNotificationAsRead: (id: string) =>
+    fetchJson<AppNotification>(`/api/notifications/${id}/read`, {
+      method: 'PUT'
+    }),
+  markAllNotificationsAsRead: (studentId?: string) =>
+    fetchJson<{ success: boolean; message: string }>('/api/notifications/mark-all-read', {
+      method: 'POST',
+      body: JSON.stringify({ student_id: studentId })
+    }),
+  deleteNotification: (id: string) =>
+    fetchJson<{ success: boolean }>(`/api/notifications/${id}`, {
+      method: 'DELETE'
     })
 };
+

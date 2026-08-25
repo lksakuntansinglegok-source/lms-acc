@@ -33,13 +33,19 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
   const [selectedTopicId, setSelectedTopicId] = useState<string>(topics[0]?.topic_id || 'top_01');
   const [deadline, setDeadline] = useState('2026-08-30');
   const [prereqTaskId, setPrereqTaskId] = useState<string>('');
+  const [pertemuanNum, setPertemuanNum] = useState<number>(tasks.length + 1);
   const [wajib, setWajib] = useState(true);
 
   // Delete state
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const sortedTasks = [...tasks].sort((a, b) => a.urutan - b.urutan);
+  const sortedTasks = [...tasks].sort((a, b) => {
+    const pA = a.pertemuan ?? a.urutan;
+    const pB = b.pertemuan ?? b.urutan;
+    if (pA !== pB) return pA - pB;
+    return a.urutan - b.urutan;
+  });
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +58,8 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
         deskripsi,
         task_type: taskType,
         urutan: tasks.length + 1,
+        pertemuan: Number(pertemuanNum) || (tasks.length + 1),
+        pertemuan_judul: `Pertemuan ${pertemuanNum}: ${judul}`,
         prerequisite_task_id: prereqTaskId || undefined,
         deadline,
         wajib
@@ -151,6 +159,9 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
 
                 <div>
                   <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                    <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                      Pertemuan {task.pertemuan || task.urutan}
+                    </span>
                     <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-slate-800 text-slate-300 border border-slate-700">
                       {task.task_type}
                     </span>
@@ -232,7 +243,18 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">Pertemuan Ke:</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={pertemuanNum}
+                    onChange={e => setPertemuanNum(Number(e.target.value))}
+                    className="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 outline-none font-bold"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold text-slate-400 mb-1">Jenis Modul:</label>
                   <select
@@ -249,7 +271,7 @@ export const LearningPathEditor: React.FC<LearningPathEditorProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">Tenggat Waktu (Deadline):</label>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">Deadline:</label>
                   <input
                     type="date"
                     value={deadline}

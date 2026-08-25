@@ -38,7 +38,11 @@ import {
   Info,
   RotateCcw,
   MessageSquare,
-  Sparkle
+  Sparkle,
+  LayoutGrid,
+  List,
+  Table,
+  Eye
 } from 'lucide-react';
 
 interface QuestionBankManagerProps {
@@ -51,67 +55,72 @@ interface QuestionBankManagerProps {
   onNavigateView?: (view: string) => void;
 }
 
-// Initial Practical Exercises Catalog
+// Initial Practical Exercises Catalog (Focused on PJDM and AOL)
 const DEFAULT_PRACTICAL_EXERCISES: PracticalExercise[] = [
   {
     id: 'prak_01',
     topic_id: 'top_01',
     tipe_praktik: 'PJDM',
-    judul: 'Praktik PJDM: Analisis 10 Transaksi Bengkel Jaya',
-    deskripsi: 'Input 10 transaksi bisnis Bengkel Jaya ke spreadsheet PJDM, posting jurnal umum, dan pastikan Neraca Saldo seimbang.',
+    target_types: ['PJDM'],
+    judul: 'Praktik PJDM: Analisis 10 Transaksi & Siklus Jurnal Bengkel Jaya',
+    deskripsi: 'Input 10 transaksi bisnis Bengkel Jaya ke spreadsheet PJDM, posting jurnal umum, buku besar, dan pastikan Neraca Saldo seimbang.',
     link_spreadsheet: 'https://docs.google.com/spreadsheets/d/1sample-pjdm-bengkel-jaya/edit#gid=0',
     link_petunjuk: 'https://drive.google.com/file/d/sample-petunjuk-pjdm-topik01/view',
-    deadline: '2026-08-20',
+    deadline: '2026-09-15',
     max_score: 100,
     kompetensi: 'Pengoperasian Jurnal Dasar & Memori (PJDM)'
   },
   {
     id: 'prak_02',
-    topic_id: 'top_19',
-    tipe_praktik: 'Persediaan',
-    judul: 'Praktik Kartu Persediaan Perpetual FIFO PT Sejahtera',
-    deskripsi: 'Susun kartu persediaan barang dagang 3 lapis pembelian dan penjualan menggunakan metode FIFO Perpetual & hitung HPP.',
-    link_spreadsheet: 'https://docs.google.com/spreadsheets/d/1sample-fifo-perpetual/edit#gid=0',
-    link_petunjuk: 'https://drive.google.com/file/d/sample-petunjuk-fifo/view',
-    deadline: '2026-08-25',
+    topic_id: 'top_01',
+    tipe_praktik: 'AOL',
+    target_types: ['AOL'],
+    judul: 'Praktik AOL: Setup Master Data Barang, Pelanggan & Faktur Penjualan',
+    deskripsi: 'Login ke modul software Accurate Online (AOL), buat master data pelanggan dan barang dagang, lalu posting 5 faktur penjualan kredit.',
+    link_spreadsheet: 'https://aol-app.smk.id/simulasi/task/01',
+    link_petunjuk: 'https://drive.google.com/file/d/sample-guide-aol-01/view',
+    deadline: '2026-09-20',
     max_score: 100,
-    kompetensi: 'Penilaian Persediaan Barang Dagang'
+    kompetensi: 'Akuntansi Online (AOL) & Komputer Akuntansi'
   },
   {
     id: 'prak_03',
-    topic_id: 'top_17',
-    tipe_praktik: 'Kas Kecil',
-    judul: 'Praktik Petty Cash Imprest Fund & Rekonsiliasi Bank 4 Kolom',
-    deskripsi: 'Kelola 12 voucher pengeluaran kas kecil metode dana tetap (Imprest) dan selesaikan lembar kerja rekonsiliasi bank PT Akurat.',
+    topic_id: 'top_01',
+    tipe_praktik: 'PJDM & AOL',
+    target_types: ['PJDM', 'AOL'],
+    judul: 'Praktik PJDM & AOL: Rekonsiliasi Bank & Kertas Kerja Laporan Keuangan',
+    deskripsi: 'Kerjakan lembar kerja rekonsiliasi kas bank 4 kolom pada spreadsheet PJDM dan lakukan sinkronisasi mutasi rekening koran pada modul kas bank AOL.',
     link_spreadsheet: 'https://docs.google.com/spreadsheets/d/1sample-petty-cash-reconciliation/edit#gid=0',
     link_petunjuk: 'https://drive.google.com/file/d/sample-petunjuk-kas-bank/view',
-    deadline: '2026-08-28',
+    deadline: '2026-09-25',
     max_score: 100,
-    kompetensi: 'Pengelolaan Kas & Rekonsiliasi Bank'
+    kompetensi: 'Siklus Akuntansi Manual PJDM & Digital AOL'
   },
   {
     id: 'prak_04',
     topic_id: 'top_01',
-    tipe_praktik: 'AOL',
-    judul: 'Simulasi Akuntansi Online (AOL): Setup Master Barang & Penjualan',
-    deskripsi: 'Login ke modul AOL, input master data pelanggan dan barang, lalu posting 5 faktur penjualan kredit.',
-    link_spreadsheet: 'https://aol-app.smk.id/simulasi/task/01',
-    link_petunjuk: 'https://drive.google.com/file/d/sample-guide-aol-01/view',
-    deadline: '2026-08-30',
+    tipe_praktik: 'PJDM',
+    target_types: ['PJDM'],
+    judul: 'Praktik PJDM: Kartu Persediaan FIFO Perpetual & Jurnal Penyesuaian',
+    deskripsi: 'Susun kartu persediaan barang dagang perpetual FIFO, hitung HPP, dan catat ayat jurnal penyesuaian (AJP) akhir periode.',
+    link_spreadsheet: 'https://docs.google.com/spreadsheets/d/1sample-fifo-perpetual/edit#gid=0',
+    link_petunjuk: 'https://drive.google.com/file/d/sample-petunjuk-fifo/view',
+    deadline: '2026-09-28',
     max_score: 100,
-    kompetensi: 'Akuntansi Online & Komputer Akuntansi'
+    kompetensi: 'Penilaian Persediaan & Penyesuaian PJDM'
   },
   {
     id: 'prak_05',
-    topic_id: 'top_06',
-    tipe_praktik: 'Kertas Kerja',
-    judul: 'Praktik Kertas Kerja 10 Kolom & Laporan Keuangan Perusahaan Jasa',
-    deskripsi: 'Input jurnal penyesuaian akhir periode ke Kertas Kerja 10 kolom dan susun Laporan Laba Rugi serta Laporan Posisi Keuangan.',
-    link_spreadsheet: 'https://docs.google.com/spreadsheets/d/1sample-kertas-kerja-10-kolom/edit#gid=0',
-    link_petunjuk: 'https://drive.google.com/file/d/sample-guide-kertas-kerja/view',
-    deadline: '2026-09-02',
+    topic_id: 'top_01',
+    tipe_praktik: 'AOL',
+    target_types: ['AOL'],
+    judul: 'Praktik AOL: Siklus Pembelian, PPN Masukan & Pembayaran Kas/Bank',
+    deskripsi: 'Proses pesanan pembelian (PO), penerimaan barang dagang, faktur pembelian dengan PPN, serta pembayaran via kas/bank di AOL.',
+    link_spreadsheet: 'https://aol-app.smk.id/simulasi/task/02',
+    link_petunjuk: 'https://drive.google.com/file/d/sample-guide-aol-02/view',
+    deadline: '2026-09-30',
     max_score: 100,
-    kompetensi: 'Siklus Akuntansi & Laporan Keuangan'
+    kompetensi: 'Siklus Pembelian & Kas Bank Accurate Online'
   }
 ];
 
@@ -320,14 +329,15 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
   const [isImporting, setIsImporting] = useState(false);
   const [importSuccessMsg, setImportSuccessMsg] = useState<string | null>(null);
 
-  // Add Practical Modal
+  // Add Practical Modal (2 Checklist Options: PJDM & AOL)
   const [isAddPracticalOpen, setIsAddPracticalOpen] = useState(false);
   const [prakTitle, setPrakTitle] = useState('');
-  const [prakTopicId, setPrakTopicId] = useState(topics[0]?.topic_id || 'top_01');
-  const [prakType, setPrakType] = useState<'PJDM' | 'AOL' | 'Kas Kecil' | 'Persediaan' | 'Kertas Kerja'>('PJDM');
+  const [prakIsPjdm, setPrakIsPjdm] = useState(true);
+  const [prakIsAol, setPrakIsAol] = useState(false);
   const [prakDesc, setPrakDesc] = useState('');
   const [prakSpreadsheetLink, setPrakSpreadsheetLink] = useState('');
   const [prakGuideLink, setPrakGuideLink] = useState('');
+  const [isSavingPractical, setIsSavingPractical] = useState(false);
 
   // Add Presentation Topic Modal & State
   const [isAddPresTopicOpen, setIsAddPresTopicOpen] = useState(false);
@@ -373,11 +383,13 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
   const [isResetDefaultTopicsModalOpen, setIsResetDefaultTopicsModalOpen] = useState(false);
   const [presSuccessToast, setPresSuccessToast] = useState<string | null>(null);
 
-  // Presentation Filters
+  // Presentation Filters & View Modes
   const [presSearchQuery, setPresSearchQuery] = useState('');
   const [presTopicFilter, setPresTopicFilter] = useState('all');
   const [presLevelFilter, setPresLevelFilter] = useState<'all' | 'MIDDLE' | 'HOTS'>('all');
   const [presInterviewFilter, setPresInterviewFilter] = useState<'all' | 'has_interview' | 'no_interview'>('all');
+  const [presViewMode, setPresViewMode] = useState<'list' | 'card' | 'table'>('list');
+  const [previewPresTopic, setPreviewPresTopic] = useState<PresentationTopicItem | null>(null);
 
   // Delete State
   const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null);
@@ -397,15 +409,30 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
     return matchesSearch && matchesTopic && matchesDifficulty;
   });
 
-  // Filter Practical
+  // Filter Practical (PJDM & AOL)
+  const [practicalSearchQuery, setPracticalSearchQuery] = useState('');
   const filteredPractical = practicalList.filter(p => {
+    const q = (practicalSearchQuery || searchQuery).toLowerCase();
     const matchesSearch =
-      p.judul.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.deskripsi.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTopic = selectedTopicId === 'all' || p.topic_id === selectedTopicId;
-    const matchesType = selectedPracticeType === 'all' || p.tipe_praktik === selectedPracticeType;
+      p.judul.toLowerCase().includes(q) ||
+      p.deskripsi.toLowerCase().includes(q);
+    
+    let matchesType = true;
+    if (selectedPracticeType === 'PJDM') {
+      matchesType =
+        p.tipe_praktik === 'PJDM' ||
+        p.tipe_praktik === 'PJDM & AOL' ||
+        (p.target_types && p.target_types.includes('PJDM')) ||
+        p.judul.toUpperCase().includes('PJDM');
+    } else if (selectedPracticeType === 'AOL') {
+      matchesType =
+        p.tipe_praktik === 'AOL' ||
+        p.tipe_praktik === 'PJDM & AOL' ||
+        (p.target_types && p.target_types.includes('AOL')) ||
+        p.judul.toUpperCase().includes('AOL');
+    }
 
-    return matchesSearch && matchesTopic && matchesType;
+    return matchesSearch && matchesType;
   });
 
   // Filter Presentation
@@ -701,29 +728,103 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
     setDeletingPresTopicId(null);
   };
 
-  const handleAddPractical = (e: React.FormEvent) => {
+  const handleAddPractical = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prakTitle || !prakSpreadsheetLink) return;
+    if (!prakTitle.trim() || !prakSpreadsheetLink.trim()) return;
+
+    if (!prakIsPjdm && !prakIsAol) {
+      alert('Harap centang minimal salah satu tipe praktik (PJDM atau AOL) untuk ditugaskan.');
+      return;
+    }
+
+    setIsSavingPractical(true);
+
+    const selectedTypes: ('PJDM' | 'AOL')[] = [];
+    if (prakIsPjdm) selectedTypes.push('PJDM');
+    if (prakIsAol) selectedTypes.push('AOL');
+
+    const tipeStr: 'PJDM' | 'AOL' | 'PJDM & AOL' =
+      selectedTypes.length === 2 ? 'PJDM & AOL' : selectedTypes[0];
+
+    const createdTaskIds: string[] = [];
+
+    // Auto-create individual student tasks in Learning Path / Task List for each checked type
+    try {
+      if (prakIsPjdm) {
+        const pjdmTitle = selectedTypes.length === 2
+          ? `[PJDM] ${prakTitle}`
+          : (prakTitle.toLowerCase().includes('pjdm') ? prakTitle : `Praktik PJDM: ${prakTitle}`);
+
+        const createdPjdm = await api.createTask({
+          topic_id: 'top_01',
+          task_type: 'PJDM',
+          judul: pjdmTitle,
+          deskripsi: prakDesc || 'Latihan praktik keahlian siklus akuntansi manual/spreadsheet mandiri.',
+          link_tugas: prakSpreadsheetLink,
+          link_materi: prakGuideLink || prakSpreadsheetLink,
+          deadline: '2026-09-30',
+          wajib: true,
+          urutan: (tasks?.length || 0) + 1
+        });
+        if (createdPjdm?.task_id) createdTaskIds.push(createdPjdm.task_id);
+      }
+
+      if (prakIsAol) {
+        const aolTitle = selectedTypes.length === 2
+          ? `[AOL] ${prakTitle}`
+          : (prakTitle.toLowerCase().includes('aol') ? prakTitle : `Praktik AOL: ${prakTitle}`);
+
+        const createdAol = await api.createTask({
+          topic_id: 'top_01',
+          task_type: 'AOL',
+          judul: aolTitle,
+          deskripsi: prakDesc || 'Latihan simulasi akuntansi online (AOL) mandiri menggunakan software komputer akuntansi.',
+          link_tugas: prakSpreadsheetLink,
+          link_materi: prakGuideLink || prakSpreadsheetLink,
+          deadline: '2026-09-30',
+          wajib: true,
+          urutan: (tasks?.length || 0) + (prakIsPjdm ? 2 : 1)
+        });
+        if (createdAol?.task_id) createdTaskIds.push(createdAol.task_id);
+      }
+    } catch (err) {
+      console.error('Error auto-creating tasks for practical:', err);
+    }
+
     const newItem: PracticalExercise = {
       id: 'prak_' + Date.now(),
-      topic_id: prakTopicId,
+      topic_id: 'all',
       judul: prakTitle,
-      tipe_praktik: prakType,
+      tipe_praktik: tipeStr,
+      target_types: selectedTypes,
       deskripsi: prakDesc || 'Latihan praktik akuntansi mandiri.',
       link_spreadsheet: prakSpreadsheetLink,
       link_petunjuk: prakGuideLink,
-      deadline: '2026-09-15',
+      deadline: '2026-09-30',
       max_score: 100,
-      kompetensi: 'Praktik Keahlian Akuntansi'
+      kompetensi: selectedTypes.length === 2
+        ? 'Praktik Keahlian PJDM & AOL'
+        : selectedTypes[0] === 'PJDM'
+        ? 'Pengoperasian Jurnal Dasar & Memori (PJDM)'
+        : 'Akuntansi Online (AOL) & Komputer Akuntansi',
+      task_ids: createdTaskIds
     };
+
     const updated = [newItem, ...practicalList];
     setPracticalList(updated);
     localStorage.setItem('lms_practical_list', JSON.stringify(updated));
+
+    setIsSavingPractical(false);
     setIsAddPracticalOpen(false);
     setPrakTitle('');
     setPrakSpreadsheetLink('');
     setPrakGuideLink('');
     setPrakDesc('');
+    setPrakIsPjdm(true);
+    setPrakIsAol(false);
+
+    // Refresh application data so new tasks appear on student dashboard immediately
+    if (onRefreshData) onRefreshData();
   };
 
   const handleAddPresTopic = (e: React.FormEvent) => {
@@ -981,6 +1082,7 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
   };
 
   const getTopicName = (id: string) => {
+    if (!id || id === 'all') return 'Praktik Siklus Akuntansi';
     return topics.find(t => t.topic_id === id)?.nama_topik || 'Topik Akuntansi';
   };
 
@@ -991,14 +1093,10 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <HelpCircle className="w-5 h-5 text-emerald-400" />
-            {currentUserRole === 'teacher'
-              ? 'Bank Soal, Link Praktik & Topik Presentasi Akuntansi'
-              : 'Bank Soal Teori & Link Praktik Akuntansi'}
+            Bank Soal & Modul Pembelajaran AKL (3 Kategori Utama)
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            {currentUserRole === 'teacher'
-              ? 'Pusat soal teori bilingual, tautan lembar kerja praktik (PJDM/AOL/Kas Kecil), serta panduan topik presentasi kasus akuntansi.'
-              : 'Pusat latihan soal teori akuntansi bilingual dan tautan lembar kerja praktik (PJDM/AOL/Kas Kecil).'}
+            Pusat soal teori bilingual berbobot HOTS, lembar kerja praktik komputer akuntansi (PJDM & AOL), serta bahan presentasi lengkap dengan soal wawancara berstandar Juri LKS SMK.
           </p>
         </div>
 
@@ -1023,7 +1121,7 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
                 className="px-4 py-2.5 text-xs font-bold rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition cursor-pointer flex items-center gap-2 shadow-md"
               >
                 <Sparkles className="w-4 h-4" />
-                Generate Soal AI
+                Generator Soal AI
               </button>
             </>
           )}
@@ -1050,45 +1148,43 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
         </div>
       </div>
 
-      {/* TABS NAVIGATION */}
-      <div className="flex items-center border-b border-slate-800 space-x-2 pb-2">
+      {/* TABS NAVIGATION (3 CLEAR CHOICES FOR STUDENTS & TEACHERS) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-1.5 bg-slate-950 border border-slate-800 rounded-2xl">
         <button
           onClick={() => setActiveTab('teori')}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer ${
+          className={`p-3 rounded-xl transition flex items-center justify-center gap-2.5 cursor-pointer font-bold text-xs ${
             activeTab === 'teori'
-              ? 'bg-emerald-500 text-slate-950 shadow-md'
-              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+              ? 'bg-emerald-500 text-slate-950 shadow-lg'
+              : 'text-slate-300 hover:text-white hover:bg-slate-900 border border-transparent hover:border-slate-800'
           }`}
         >
           <BookOpen className="w-4 h-4" />
-          Soal Teori Akuntansi ({questions.length})
+          <span>1. Soal Teori Akuntansi ({questions.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('praktik')}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer ${
+          className={`p-3 rounded-xl transition flex items-center justify-center gap-2.5 cursor-pointer font-bold text-xs ${
             activeTab === 'praktik'
-              ? 'bg-emerald-500 text-slate-950 shadow-md'
-              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+              ? 'bg-blue-500 text-slate-950 shadow-lg'
+              : 'text-slate-300 hover:text-white hover:bg-slate-900 border border-transparent hover:border-slate-800'
           }`}
         >
           <FileSpreadsheet className="w-4 h-4" />
-          Link Soal Praktik ({practicalList.length})
+          <span>2. Soal Praktik PJDM & AOL ({practicalList.length})</span>
         </button>
 
-        {currentUserRole === 'teacher' && (
-          <button
-            onClick={() => setActiveTab('presentasi')}
-            className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer ${
-              activeTab === 'presentasi'
-                ? 'bg-emerald-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
-            }`}
-          >
-            <Video className="w-4 h-4" />
-            Topik-Topik Presentasi ({presentationTopicsList.length})
-          </button>
-        )}
+        <button
+          onClick={() => setActiveTab('presentasi')}
+          className={`p-3 rounded-xl transition flex items-center justify-center gap-2.5 cursor-pointer font-bold text-xs ${
+            activeTab === 'presentasi'
+              ? 'bg-purple-500 text-slate-950 shadow-lg'
+              : 'text-slate-300 hover:text-white hover:bg-slate-900 border border-transparent hover:border-slate-800'
+          }`}
+        >
+          <Video className="w-4 h-4" />
+          <span>3. Bahan Presentasi & Wawancara Juri LKS ({presentationTopicsList.length})</span>
+        </button>
       </div>
 
       {/* AI GENERATOR BANNER FOR TEACHERS (TEORI AKUNTANSI) */}
@@ -1263,6 +1359,32 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
       {/* ================= TAB 2: LINK SOAL PRAKTIK ================= */}
       {activeTab === 'praktik' && (
         <div className="space-y-4">
+          {/* SEARCH & FILTER BAR UNTUK SOAL PRAKTIK (PJDM & AOL) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+              <input
+                type="text"
+                value={practicalSearchQuery}
+                onChange={e => setPracticalSearchQuery(e.target.value)}
+                placeholder="Cari judul soal praktik (PJDM / AOL)..."
+                className="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl pl-9 pr-3 py-2.5 outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <select
+                value={selectedPracticeType}
+                onChange={e => setSelectedPracticeType(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 text-xs text-slate-200 font-semibold rounded-xl px-3 py-2.5 outline-none cursor-pointer"
+              >
+                <option value="all">Semua Tipe Praktik (PJDM & AOL)</option>
+                <option value="PJDM">PJDM (Jurnal & Siklus Manual)</option>
+                <option value="AOL">AOL (Akuntansi Online)</option>
+              </select>
+            </div>
+          </div>
+
           {/* TOOLBAR LIPAT / BUKA SEMUA LIST */}
           <div className="flex items-center justify-between gap-3 p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs">
             <span className="font-bold text-slate-300">
@@ -1293,6 +1415,10 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
           ) : (
             filteredPractical.map(p => {
               const isExpanded = !!expandedPracticalIds[p.id];
+              const isBothTypes = p.tipe_praktik === 'PJDM & AOL' || (p.target_types && p.target_types.length === 2);
+              const isAolOnly = p.tipe_praktik === 'AOL' || (p.target_types?.length === 1 && p.target_types[0] === 'AOL');
+              const isPjdmOnly = p.tipe_praktik === 'PJDM' || (p.target_types?.length === 1 && p.target_types[0] === 'PJDM');
+
               return (
                 <div key={p.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-emerald-500/40 transition shadow-sm">
                   {/* FOLDABLE HEADER ROW */}
@@ -1305,9 +1431,27 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
                         {isExpanded ? <ChevronUp className="w-4 h-4 text-emerald-400" /> : <ChevronDown className="w-4 h-4" />}
                       </div>
 
-                      <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/40 uppercase shrink-0">
-                        {p.tipe_praktik}
-                      </span>
+                      {/* BADGES FOR PJDM AND AOL */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {isBothTypes ? (
+                          <>
+                            <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/40 uppercase">
+                              PJDM
+                            </span>
+                            <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 uppercase">
+                              AOL
+                            </span>
+                          </>
+                        ) : isAolOnly ? (
+                          <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 uppercase">
+                            AOL
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/40 uppercase">
+                            PJDM
+                          </span>
+                        )}
+                      </div>
 
                       <div className="truncate min-w-0 flex-1">
                         <h3 className="text-sm font-bold text-white truncate">{p.judul}</h3>
@@ -1356,6 +1500,26 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
                           Buka Link Drive Soal & Jobsheet Praktik
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
+
+                        {/* Direct launcher to student task modal if in student mode */}
+                        {currentUserRole === 'student' && onStartTask && (
+                          <div className="flex items-center gap-2">
+                            {tasks.filter(t => (t.task_type === 'PJDM' || t.task_type === 'AOL') && (t.judul.includes(p.judul) || p.task_ids?.includes(t.task_id))).map(t => (
+                              <button
+                                key={t.task_id}
+                                onClick={() => onStartTask(t)}
+                                className={`px-3 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer transition shadow ${
+                                  t.task_type === 'PJDM'
+                                    ? 'bg-blue-600 hover:bg-blue-500 text-white'
+                                    : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                                }`}
+                              >
+                                <ArrowRight className="w-3.5 h-3.5" />
+                                Buka Form Penugasan {t.task_type} Siswa
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       {/* FORM PENGUMPULAN LINK PEKERJAAN SISWA */}
@@ -1555,8 +1719,8 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
         </div>
       )}
 
-      {/* ================= TAB 3: TOPIK PRESENTASI & WAWANCARA SUARA ================= */}
-      {activeTab === 'presentasi' && currentUserRole === 'teacher' && (
+      {/* ================= TAB 3: TOPIK PRESENTASI & WAWANCARA SUARA JURI LKS ================= */}
+      {activeTab === 'presentasi' && (
         <div className="space-y-6">
           {/* SPECIAL SECTION: SOAL WAWANCARA TEORI & LISAN WITH DIRECT AUDIO RECORDER */}
           <div className="p-6 bg-gradient-to-br from-purple-950/40 via-slate-900 to-slate-950 border-2 border-purple-500/40 rounded-2xl shadow-xl space-y-4 relative overflow-hidden">
@@ -1566,16 +1730,17 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-500/20 pb-4">
               <div>
-                <span className="px-3 py-1 text-[10px] font-extrabold rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 uppercase tracking-wider">
-                  🎙️ Soal Wawancara Presentasi (Middle & HOTS) Berbasis Studi Kasus
+                <span className="px-3 py-1 text-[10px] font-extrabold rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 uppercase tracking-wider flex items-center gap-1.5 w-fit">
+                  <Award className="w-3.5 h-3.5 text-amber-400" />
+                  Uji Wawancara Lisan Dewan Juri LKS SMK (Middle & HOTS)
                 </span>
                 <h3 className="text-lg font-bold text-white mt-2">
-                  Topik Wawancara: {topics.find(t => t.topic_id === (selectedTopicId === 'all' ? 'top_01' : selectedTopicId))?.nama_topik || 'Persamaan Dasar Akuntansi'}
+                  Materi Pengujian Wawancara: {topics.find(t => t.topic_id === (selectedTopicId === 'all' ? 'top_01' : selectedTopicId))?.nama_topik || 'Persamaan Dasar Akuntansi'}
                 </h3>
               </div>
               <span className="text-xs font-bold text-amber-300 bg-amber-950/60 border border-amber-500/40 px-3 py-1 rounded-xl shrink-0 flex items-center gap-1.5">
                 <Clock className="w-4 h-4" />
-                Target Suara: 3 - 5 Menit
+                Target Rekam Jawaban: 3 - 5 Menit
               </span>
             </div>
 
@@ -1583,10 +1748,10 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
             <div className="p-4 bg-slate-950/90 border border-purple-500/30 rounded-xl space-y-2">
               <div className="flex items-center space-x-2 text-xs font-bold text-emerald-400">
                 <BookOpen className="w-4 h-4" />
-                <span>Studi Kasus Pembahasan Topik Ini:</span>
+                <span>Studi Kasus Pembahasan & Pengujian Juri:</span>
               </div>
               <p className="text-xs text-slate-200 leading-relaxed font-sans">
-                "PT LKS Utama Indonesia sedang melakukan audit siklus keuangan dan evaluasi laporan keuangan harian. Teknisi akuntansi diminta menganalisis keterkaitan antar dokumen sumber, pencatatan jurnal, hingga pengaruhnya terhadap posisi saldo akhir. Evaluasi ini menjadi dasar wawancara lisan Anda."
+                "Sebagai peserta LKS SMK Bidang Akuntansi, Anda bertindak sebagai Konsultan & Teknisi Akuntansi Junior yang sedang diaudit oleh Dewan Juri. Dewan Juri akan menguji ketepatan penguasaan standar akuntansi, logika jurnal, penyajian laporan keuangan, serta kemampuan analisis kritis atas anomali transaksi berikut."
               </p>
             </div>
 
@@ -1595,30 +1760,30 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
               {/* 1. MIDDLE QUESTION */}
               <div className="p-4 bg-slate-950/80 border border-blue-500/30 rounded-xl space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-blue-300 uppercase bg-blue-950/80 border border-blue-500/40 px-2 py-0.5 rounded">
-                    1. Soal Wawancara Level MIDDLE
+                  <span className="text-[10px] font-bold text-blue-300 uppercase bg-blue-950/80 border border-blue-500/40 px-2 py-0.5 rounded flex items-center gap-1">
+                    Pertanyaan Juri #1 (Teknis & Prosedural - Middle)
                   </span>
                 </div>
                 <p className="text-xs font-semibold text-slate-100 leading-relaxed">
-                  "Jelaskan alur prosedur pencatatan dasar dan penyesuaian transaksi untuk topik {topics.find(t => t.topic_id === (selectedTopicId === 'all' ? 'top_01' : selectedTopicId))?.nama_topik} dalam konteks studi kasus PT LKS Utama!"
+                  "Juri LKS bertanya: 'Saudara peserta LKS, jelaskan secara runtut dasar hukum SAK/PSAK, mekanisme debit-kredit, serta prosedur pencatatan transaksi untuk topik {topics.find(t => t.topic_id === (selectedTopicId === 'all' ? 'top_01' : selectedTopicId))?.nama_topik} agar laporan posisi keuangan bebas dari salah saji material!'"
                 </p>
                 <div className="pt-2 border-t border-slate-800/80 text-[11px] text-slate-400">
-                  <strong className="text-blue-300">Kunci Jawaban Guru:</strong> Penjelasan prosedural, konsep debit/kredit, dan pengaruhnya pada laporan keuangan.
+                  <strong className="text-blue-300">Rubrik Penilaian Juri:</strong> Ketepatan definisi, sistematika alur pencatatan jurnal, penggolongan akun, dan artikulasi bahasa teknis akuntansi.
                 </div>
               </div>
 
               {/* 2. HOTS QUESTION */}
               <div className="p-4 bg-slate-950/80 border border-rose-500/30 rounded-xl space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-rose-300 uppercase bg-rose-950/80 border border-rose-500/40 px-2 py-0.5 rounded">
-                    2. Soal Wawancara Level HOTS (Analitis & Evaluatif)
+                  <span className="text-[10px] font-bold text-rose-300 uppercase bg-rose-950/80 border border-rose-500/40 px-2 py-0.5 rounded flex items-center gap-1">
+                    Pertanyaan Juri #2 (Analisis & Evaluasi - HOTS)
                   </span>
                 </div>
                 <p className="text-xs font-semibold text-slate-100 leading-relaxed">
-                  "Analisislah dampak keandalan laporan keuangan dan potensi risiko perpajakan/kas jika ditemukan ketidaksesuaian pencatatan pada topik {topics.find(t => t.topic_id === (selectedTopicId === 'all' ? 'top_01' : selectedTopicId))?.nama_topik}, serta berikan solusi koreksinya!"
+                  "Juri LKS bertanya: 'Jika dalam simulasi perusahaan ditemukan ketidaksesuaian atau potensi fraud pada pos {topics.find(t => t.topic_id === (selectedTopicId === 'all' ? 'top_01' : selectedTopicId))?.nama_topik}, evaluasi bagaimana dampaknya terhadap laba bersih, beban pajak terutang, serta berikan rekomendasi solusi pengendalian internal (SOP)!'"
                 </p>
                 <div className="pt-2 border-t border-slate-800/80 text-[11px] text-slate-400">
-                  <strong className="text-rose-300">Kunci Jawaban Guru:</strong> Evaluasi risiko, dampak finansial/pajak, dan pembuatan jurnal koreksi/penyesuaian yang tepat.
+                  <strong className="text-rose-300">Rubrik Penilaian Juri:</strong> Logika berpikir kritis (problem solving), perhitungan dampak finansial, pembuatan jurnal penyesuaian/koreksi, dan mitigasi risiko.
                 </div>
               </div>
             </div>
@@ -1785,32 +1950,79 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
                   <option value="has_interview">✨ Ada 2 Soal Wawancara AI</option>
                   <option value="no_interview">Belum Ada Wawancara</option>
                 </select>
+
+                {/* View Mode Switcher */}
+                <div className="flex items-center bg-slate-950 p-0.5 rounded-lg border border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setPresViewMode('list')}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition ${
+                      presViewMode === 'list'
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                    title="Tampilan Daftar Terlipat (Accordion)"
+                  >
+                    <List className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Daftar Terlipat</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPresViewMode('card')}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition ${
+                      presViewMode === 'card'
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                    title="Tampilan Grid Kartu (Card View)"
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Grid Kartu</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPresViewMode('table')}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition ${
+                      presViewMode === 'table'
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                    title="Tampilan Tabel Ringkas"
+                  >
+                    <Table className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Tabel Ringkas</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Expand / Collapse All */}
+              {/* Expand / Collapse All (Only for list view) */}
               <div className="flex items-center space-x-1.5">
                 <span className="text-[11px] text-slate-400 font-medium mr-1">
                   Menampilkan <strong className="text-white">{filteredPresentationTopics.length}</strong> topik
                 </span>
-                <button
-                  onClick={expandAllPresTopics}
-                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
-                >
-                  <ChevronDown className="w-3.5 h-3.5 text-purple-400" />
-                  Buka Semua
-                </button>
-                <button
-                  onClick={collapseAllPresTopics}
-                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
-                >
-                  <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
-                  Lipat Semua
-                </button>
+                {presViewMode === 'list' && (
+                  <>
+                    <button
+                      onClick={expandAllPresTopics}
+                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
+                    >
+                      <ChevronDown className="w-3.5 h-3.5 text-purple-400" />
+                      Buka Semua
+                    </button>
+                    <button
+                      onClick={collapseAllPresTopics}
+                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
+                    >
+                      <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                      Lipat Semua
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
 
-          {/* LIST OF PRESENTATION TOPICS */}
+          {/* LIST / CARD / TABLE VIEW OF PRESENTATION TOPICS */}
           {filteredPresentationTopics.length === 0 ? (
             <div className="text-center py-12 bg-slate-900 border border-slate-800 rounded-2xl text-slate-400 text-xs space-y-2">
               <p className="font-semibold text-slate-300">Tidak ada topik presentasi yang cocok dengan kriteria pencarian/filter.</p>
@@ -1826,7 +2038,235 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
                 Reset Semua Filter
               </button>
             </div>
+          ) : presViewMode === 'card' ? (
+            /* ================= CARD / GRID VIEW ================= */
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredPresentationTopics.map(pt => {
+                const isGeneratingThis = generatingInterviewTopicId === pt.id;
+                const hasInterviewQuestions = !!(pt.interview_questions?.middle_question || pt.interview_questions?.hots_question);
+
+                return (
+                  <div
+                    key={pt.id}
+                    className="bg-slate-900 border border-slate-800 hover:border-purple-500/50 rounded-2xl p-5 flex flex-col justify-between space-y-4 transition shadow-sm hover:shadow-lg group"
+                  >
+                    <div className="space-y-3">
+                      {/* Card Header Badges */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-purple-400 bg-purple-950/60 border border-purple-500/30 px-2 py-0.5 rounded-lg">
+                            {pt.id}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 text-[10px] font-extrabold rounded-md uppercase border ${
+                              pt.tipe_soal === 'HOTS'
+                                ? 'bg-rose-950/80 text-rose-300 border-rose-500/40'
+                                : 'bg-blue-950/80 text-blue-300 border-blue-500/40'
+                            }`}
+                          >
+                            {pt.tipe_soal || 'MIDDLE'}
+                          </span>
+                        </div>
+
+                        <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-slate-500" />
+                          {pt.target_durasi || '3-5 Menit'}
+                        </span>
+                      </div>
+
+                      {/* Topic Title */}
+                      <div>
+                        <h3 className="text-sm font-bold text-white group-hover:text-purple-300 transition line-clamp-2 leading-snug">
+                          {pt.judul_topik}
+                        </h3>
+                        <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">
+                          • {getTopicName(pt.topic_id)}
+                        </p>
+                      </div>
+
+                      {/* Description / Summary Preview */}
+                      <p className="text-xs text-slate-300 line-clamp-3 leading-relaxed font-sans bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                        {pt.middle_hots_case_study || pt.soal_studi_kasus || pt.deskripsi}
+                      </p>
+
+                      {/* Status AI Interview Badge */}
+                      <div className="flex items-center justify-between text-[11px]">
+                        {hasInterviewQuestions ? (
+                          <span className="inline-flex items-center gap-1 text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-500/30">
+                            <Sparkles className="w-3 h-3 text-emerald-400" />
+                            2 Soal Wawancara AI ✓
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 italic">
+                            Belum ada 2 soal wawancara
+                          </span>
+                        )}
+                        <span className="text-slate-400">
+                          {(pt.required_points || pt.poin_utama || []).length} Poin Wajib
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Card Actions Footer */}
+                    <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewPresTopic(pt)}
+                        className="px-3.5 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 hover:text-white border border-purple-500/40 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-purple-400" />
+                        Buka Detail & Wawancara
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        {currentUserRole === 'teacher' && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleGenerateInterviewForTopic(pt)}
+                              disabled={isGeneratingThis}
+                              className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition cursor-pointer"
+                              title="Generate 2 Soal Wawancara AI"
+                            >
+                              {isGeneratingThis ? (
+                                <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                              ) : (
+                                <Sparkles className="w-4 h-4" />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditPresTopic(pt)}
+                              className="p-1.5 text-slate-400 hover:text-purple-300 hover:bg-slate-800 rounded-lg transition cursor-pointer"
+                              title="Edit Topik"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeletingPresTopicId(pt.id)}
+                              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition cursor-pointer"
+                              title="Hapus Topik"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : presViewMode === 'table' ? (
+            /* ================= TABLE VIEW ================= */
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-md">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-300">
+                  <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800 font-bold">
+                    <tr>
+                      <th className="p-3.5">ID / No</th>
+                      <th className="p-3.5">Materi & Judul Topik</th>
+                      <th className="p-3.5">Level</th>
+                      <th className="p-3.5">Durasi</th>
+                      <th className="p-3.5">Status Wawancara AI</th>
+                      <th className="p-3.5 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/80">
+                    {filteredPresentationTopics.map(pt => {
+                      const isGeneratingThis = generatingInterviewTopicId === pt.id;
+                      const hasInterviewQuestions = !!(pt.interview_questions?.middle_question || pt.interview_questions?.hots_question);
+
+                      return (
+                        <tr
+                          key={pt.id}
+                          className="hover:bg-slate-850/60 transition cursor-pointer"
+                          onClick={() => setPreviewPresTopic(pt)}
+                        >
+                          <td className="p-3.5 font-mono font-bold text-purple-400 whitespace-nowrap">
+                            {pt.id}
+                          </td>
+                          <td className="p-3.5">
+                            <div className="font-bold text-white hover:text-purple-300 transition">
+                              {pt.judul_topik}
+                            </div>
+                            <div className="text-[11px] text-slate-400">
+                              {getTopicName(pt.topic_id)}
+                            </div>
+                          </td>
+                          <td className="p-3.5 whitespace-nowrap">
+                            <span
+                              className={`px-2 py-0.5 text-[10px] font-extrabold rounded-md uppercase border ${
+                                pt.tipe_soal === 'HOTS'
+                                  ? 'bg-rose-950/80 text-rose-300 border-rose-500/40'
+                                  : 'bg-blue-950/80 text-blue-300 border-blue-500/40'
+                              }`}
+                            >
+                              {pt.tipe_soal || 'MIDDLE'}
+                            </span>
+                          </td>
+                          <td className="p-3.5 whitespace-nowrap text-slate-400">
+                            {pt.target_durasi || '3-5 Menit'}
+                          </td>
+                          <td className="p-3.5 whitespace-nowrap">
+                            {hasInterviewQuestions ? (
+                              <span className="inline-flex items-center gap-1 text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-500/30 text-[10px]">
+                                <Sparkles className="w-3 h-3 text-emerald-400" />
+                                2 Soal AI ✓
+                              </span>
+                            ) : (
+                              <span className="text-slate-500 text-[10px] italic">
+                                Belum Ada
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3.5 text-right whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setPreviewPresTopic(pt)}
+                                className="px-2.5 py-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 rounded-lg font-bold text-[11px] transition flex items-center gap-1 cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                Detail
+                              </button>
+                              {currentUserRole === 'teacher' && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleGenerateInterviewForTopic(pt)}
+                                    disabled={isGeneratingThis}
+                                    className="p-1 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition"
+                                    title="AI Interview"
+                                  >
+                                    {isGeneratingThis ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                                    ) : (
+                                      <Sparkles className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEditPresTopic(pt)}
+                                    className="p-1 text-slate-400 hover:text-purple-300 hover:bg-slate-800 rounded transition"
+                                    title="Edit"
+                                  >
+                                    <Edit className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           ) : (
+            /* ================= LIST / ACCORDION VIEW (DEFAULT) ================= */
             filteredPresentationTopics.map((pt, idx) => {
               const isExpanded = !!expandedPresTopicIds[pt.id];
               const isGeneratingThis = generatingInterviewTopicId === pt.id;
@@ -2151,6 +2591,174 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
               );
             })
           )}
+        </div>
+      )}
+
+      {/* ================= MODAL: PREVIEW PRESENTATION TOPIC (FOR CARD & TABLE VIEWS) ================= */}
+      {previewPresTopic && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+          <div className="bg-slate-900 border border-purple-500/40 rounded-3xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl relative space-y-5 max-h-[90vh] overflow-y-auto animate-in fade-in">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-slate-800 pb-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-purple-400 bg-purple-950/80 border border-purple-500/30 px-2 py-0.5 rounded-lg">
+                    {previewPresTopic.id}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 text-[10px] font-extrabold rounded-md uppercase border ${
+                      previewPresTopic.tipe_soal === 'HOTS'
+                        ? 'bg-rose-950/80 text-rose-300 border-rose-500/40'
+                        : 'bg-blue-950/80 text-blue-300 border-blue-500/40'
+                    }`}
+                  >
+                    {previewPresTopic.tipe_soal || 'MIDDLE'}
+                  </span>
+                  <span className="text-xs text-slate-400 flex items-center gap-1 ml-2">
+                    <Clock className="w-3.5 h-3.5" />
+                    {previewPresTopic.target_durasi || '3-5 Menit'}
+                  </span>
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-white">
+                  {previewPresTopic.judul_topik}
+                </h3>
+                <p className="text-xs text-slate-400">• {getTopicName(previewPresTopic.topic_id)}</p>
+              </div>
+
+              <button
+                onClick={() => setPreviewPresTopic(null)}
+                className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="space-y-4 text-xs">
+              <p className="text-slate-300 leading-relaxed font-sans">{previewPresTopic.deskripsi}</p>
+
+              {/* Required Points */}
+              <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+                <div className="font-bold text-emerald-400 flex items-center gap-1.5">
+                  <Layers className="w-4 h-4" />
+                  Poin Wajib Dipaparkan dalam Presentasi:
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300">
+                  {(previewPresTopic.required_points || previewPresTopic.poin_utama || []).map((poin, pIdx) => (
+                    <div key={pIdx} className="flex items-start gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                      <span className="leading-snug">{poin}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Case Study */}
+              {(previewPresTopic.middle_hots_case_study || previewPresTopic.soal_studi_kasus) && (
+                <div className="p-3.5 bg-amber-950/30 border border-amber-500/30 rounded-2xl space-y-2">
+                  <div className="font-bold text-amber-400 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Award className="w-4 h-4 text-amber-400" />
+                      Studi Kasus Juri LKS ({previewPresTopic.tipe_soal || 'MIDDLE'}):
+                    </span>
+                  </div>
+                  <p className="text-slate-200 leading-relaxed font-sans whitespace-pre-line bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                    {previewPresTopic.middle_hots_case_study || previewPresTopic.soal_studi_kasus}
+                  </p>
+                </div>
+              )}
+
+              {/* 2 Interview Questions */}
+              {previewPresTopic.interview_questions?.middle_question || previewPresTopic.interview_questions?.hots_question ? (
+                <div className="p-4 bg-slate-950 border border-purple-500/30 rounded-2xl space-y-3">
+                  <div className="font-bold text-purple-300 flex items-center gap-1.5">
+                    <MessageSquare className="w-4 h-4 text-purple-400" />
+                    2 Soal Wawancara Lisan (Level Middle & HOTS):
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Middle */}
+                    {previewPresTopic.interview_questions.middle_question && (
+                      <div className="p-3 bg-slate-900 border border-blue-500/30 rounded-xl space-y-1.5">
+                        <span className="text-[10px] font-bold text-blue-300 uppercase bg-blue-950 px-1.5 py-0.5 rounded">
+                          Level Middle
+                        </span>
+                        <p className="text-white font-semibold">"{previewPresTopic.interview_questions.middle_question}"</p>
+                        {previewPresTopic.interview_questions.middle_expected_points && (
+                          <div className="text-[11px] text-slate-400 pt-1 border-t border-slate-800">
+                            <strong>Kunci Jawaban Guru:</strong>
+                            <ul className="list-disc pl-4 space-y-0.5">
+                              {previewPresTopic.interview_questions.middle_expected_points.map((ptk, pIdx) => (
+                                <li key={pIdx}>{ptk}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* HOTS */}
+                    {previewPresTopic.interview_questions.hots_question && (
+                      <div className="p-3 bg-slate-900 border border-rose-500/30 rounded-xl space-y-1.5">
+                        <span className="text-[10px] font-bold text-rose-300 uppercase bg-rose-950 px-1.5 py-0.5 rounded">
+                          Level HOTS (Analitis)
+                        </span>
+                        <p className="text-white font-semibold">"{previewPresTopic.interview_questions.hots_question}"</p>
+                        {previewPresTopic.interview_questions.hots_expected_points && (
+                          <div className="text-[11px] text-slate-400 pt-1 border-t border-slate-800">
+                            <strong>Kunci Jawaban Guru:</strong>
+                            <ul className="list-disc pl-4 space-y-0.5">
+                              {previewPresTopic.interview_questions.hots_expected_points.map((ptk, pIdx) => (
+                                <li key={pIdx}>{ptk}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Links */}
+              <div className="flex flex-wrap items-center gap-2 pt-2">
+                {previewPresTopic.link_template_slide && (
+                  <a
+                    href={previewPresTopic.link_template_slide}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-2 text-xs font-bold rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 transition flex items-center gap-1.5"
+                  >
+                    <Download className="w-4 h-4 text-purple-400" />
+                    Buka Template Slide PPT
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+                {previewPresTopic.link_panduan && (
+                  <a
+                    href={previewPresTopic.link_panduan}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5"
+                  >
+                    <FileText className="w-4 h-4 text-slate-400" />
+                    Panduan Presentasi
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setPreviewPresTopic(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs transition"
+              >
+                Tutup Pratinjau
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -2591,7 +3199,7 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
               Tambah Link Soal Praktik Baru
             </h3>
 
-            <form onSubmit={handleAddPractical} className="space-y-3 text-xs">
+            <form onSubmit={handleAddPractical} className="space-y-3.5 text-xs">
               <div>
                 <label className="block text-slate-400 font-bold mb-1">Judul Soal Praktik:</label>
                 <input
@@ -2599,40 +3207,87 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
                   required
                   value={prakTitle}
                   onChange={e => setPrakTitle(e.target.value)}
-                  placeholder="misal: Praktik PJDM Rekonsiliasi Kas PT Sukses"
+                  placeholder="misal: Rekonsiliasi Kas Bank & Penyesuaian PT Sukses"
                   className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-emerald-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-slate-400 font-bold mb-1">Topik Akuntansi:</label>
-                  <select
-                    value={prakTopicId}
-                    onChange={e => setPrakTopicId(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none cursor-pointer"
+              {/* 2 PILIHAN CHECKLIST TIPE PRAKTIK: PJDM & AOL */}
+              <div>
+                <label className="block text-slate-400 font-bold mb-1.5">
+                  Tipe Praktik (Pilih salah satu atau keduanya untuk dikerjakan siswa): *
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {/* 1. CHECKLIST PJDM */}
+                  <label
+                    className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition select-none ${
+                      prakIsPjdm
+                        ? 'bg-blue-950/50 border-blue-500 shadow-sm'
+                        : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
+                    }`}
                   >
-                    {topics.map(t => (
-                      <option key={t.topic_id} value={t.topic_id}>
-                        {t.nama_topik}
-                      </option>
-                    ))}
-                  </select>
+                    <input
+                      type="checkbox"
+                      checked={prakIsPjdm}
+                      onChange={e => setPrakIsPjdm(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded text-blue-500 focus:ring-blue-400 border-slate-700 bg-slate-900 cursor-pointer"
+                    />
+                    <div>
+                      <div className="flex items-center gap-1.5 font-bold text-xs">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                          PJDM
+                        </span>
+                        <span className={prakIsPjdm ? 'text-blue-300 font-extrabold' : 'text-slate-300'}>
+                          Jurnal Dasar & Manual
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1 leading-snug">
+                        Lembar kerja spreadsheet siklus akuntansi (Jurnal Umum, Buku Besar, Neraca Saldo, Laporan).
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* 2. CHECKLIST AOL */}
+                  <label
+                    className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition select-none ${
+                      prakIsAol
+                        ? 'bg-indigo-950/50 border-indigo-500 shadow-sm'
+                        : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={prakIsAol}
+                      onChange={e => setPrakIsAol(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded text-indigo-500 focus:ring-indigo-400 border-slate-700 bg-slate-900 cursor-pointer"
+                    />
+                    <div>
+                      <div className="flex items-center gap-1.5 font-bold text-xs">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                          AOL
+                        </span>
+                        <span className={prakIsAol ? 'text-indigo-300 font-extrabold' : 'text-slate-300'}>
+                          Akuntansi Online
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1 leading-snug">
+                        Simulasi software komputer akuntansi online (Accurate Online / master data & transaksi).
+                      </p>
+                    </div>
+                  </label>
                 </div>
 
-                <div>
-                  <label className="block text-slate-400 font-bold mb-1">Tipe Praktik:</label>
-                  <select
-                    value={prakType}
-                    onChange={e => setPrakType(e.target.value as any)}
-                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none cursor-pointer"
-                  >
-                    <option value="PJDM">PJDM (Jurnal Dasar)</option>
-                    <option value="AOL">AOL (Akuntansi Online)</option>
-                    <option value="Kas Kecil">Kas Kecil & Bank</option>
-                    <option value="Persediaan">Kartu Persediaan</option>
-                    <option value="Kertas Kerja">Kertas Kerja 10 Kolom</option>
-                  </select>
+                {!prakIsPjdm && !prakIsAol && (
+                  <p className="text-[11px] text-rose-400 font-semibold mt-1.5 flex items-center gap-1">
+                    ⚠️ Harap centang minimal salah satu tipe praktik (PJDM atau AOL).
+                  </p>
+                )}
+
+                <div className="mt-2 p-2 rounded-lg bg-slate-950 border border-slate-800/80 text-[10px] text-slate-400 flex items-center gap-2">
+                  <Info className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>
+                    Otomatis membuat penugasan dan slot pengumpulan di halaman siswa sesuai tipe yang dicentang.
+                  </span>
                 </div>
               </div>
 
@@ -2647,17 +3302,17 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
                   className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-emerald-500"
                 />
                 <p className="text-[10px] text-slate-500 mt-1">
-                  *Cukup cantumkan 1 tautan Google Drive / Sheets yang berisi berkas soal, bukti transaksi, dan jobsheet pengerjaan siswa.
+                  *Cantumkan tautan Google Drive / Sheets yang berisi berkas soal, bukti transaksi, dan jobsheet pengerjaan siswa.
                 </p>
               </div>
 
               <div>
-                <label className="block text-slate-400 font-bold mb-1">Deskripsi Singkat Instuksi:</label>
+                <label className="block text-slate-400 font-bold mb-1">Deskripsi Singkat Instruksi:</label>
                 <textarea
                   rows={3}
                   value={prakDesc}
                   onChange={e => setPrakDesc(e.target.value)}
-                  placeholder="Petunjuk instruksi pengerjakan tugas praktik untuk siswa..."
+                  placeholder="Petunjuk instruksi pengerjaan tugas praktik untuk siswa..."
                   className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-2.5 outline-none focus:border-emerald-500"
                 />
               </div>
@@ -2666,15 +3321,23 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsAddPracticalOpen(false)}
-                  className="px-4 py-2 font-bold text-slate-400 hover:text-white"
+                  className="px-4 py-2 font-bold text-slate-400 hover:text-white cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 font-bold rounded-xl bg-emerald-500 text-slate-950 cursor-pointer"
+                  disabled={isSavingPractical || (!prakIsPjdm && !prakIsAol)}
+                  className="px-4 py-2 font-bold rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 cursor-pointer flex items-center gap-1.5 shadow"
                 >
-                  Simpan Link Praktik
+                  {isSavingPractical ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Menyimpan & Menugaskan...
+                    </>
+                  ) : (
+                    'Simpan & Terbitkan Penugasan'
+                  )}
                 </button>
               </div>
             </form>

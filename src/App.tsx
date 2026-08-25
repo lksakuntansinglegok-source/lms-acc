@@ -13,6 +13,7 @@ import { TeacherDashboard } from './components/TeacherDashboard';
 import { StudentManagement } from './components/StudentManagement';
 import { StudentComparison } from './components/StudentComparison';
 import { LearningPathEditor } from './components/LearningPathEditor';
+import { CurriculumManager } from './components/CurriculumManager';
 import { QuestionBankManager } from './components/QuestionBankManager';
 import { SubmissionsReview } from './components/SubmissionsReview';
 import { TeacherAnalytics } from './components/TeacherAnalytics';
@@ -32,7 +33,8 @@ import {
   PresentationSubmission,
   StudentProgress,
   Material,
-  OralQuestion
+  OralQuestion,
+  AppNotification
 } from './types';
 import { api } from './services/api';
 import {
@@ -101,6 +103,7 @@ export function App() {
   const [presentationSubmissions, setPresentationSubmissions] = useState<PresentationSubmission[]>([]);
   const [progressList, setProgressList] = useState<StudentProgress[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   // Modal Popups State
   const [activeTaskForModal, setActiveTaskForModal] = useState<Task | null>(null);
@@ -123,7 +126,8 @@ export function App() {
         orData,
         prData,
         progData,
-        logData
+        logData,
+        notifData
       ] = await Promise.all([
         api.getStudents(),
         api.getTeacher(),
@@ -137,7 +141,8 @@ export function App() {
         api.getOralSubmissions(),
         api.getPresentationSubmissions(),
         api.getStudentProgresses(),
-        api.getAuditLogs()
+        api.getAuditLogs(),
+        api.getNotifications()
       ]);
 
       setStudents(stData);
@@ -154,8 +159,77 @@ export function App() {
       setPresentationSubmissions(prData);
       setProgressList(progData);
       setAuditLogs(logData);
+      setNotifications(notifData || []);
     } catch (err) {
       console.error('Failed to load initial data:', err);
+    }
+  };
+
+  const handleMarkNotificationAsRead = async (notifId: string) => {
+    try {
+      setNotifications(prev => prev.map(n => (n.id === notifId ? { ...n, read: true } : n)));
+      await api.markNotificationAsRead(notifId);
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
+    }
+  };
+
+  const handleMarkAllNotificationsAsRead = async () => {
+    try {
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      const filterId = currentUserRole === 'student' ? currentStudentId : undefined;
+      await api.markAllNotificationsAsRead(filterId);
+    } catch (err) {
+      console.error('Failed to mark all notifications as read:', err);
+    }
+  };
+
+  const handleDeleteNotification = async (notifId: string) => {
+    try {
+      setNotifications(prev => prev.filter(n => n.id !== notifId));
+      await api.deleteNotification(notifId);
+    } catch (err) {
+      console.error('Failed to delete notification:', err);
+    }
+  };
+
+  const handleNotificationClick = (notif: AppNotification) => {
+    if (notif.type === 'new_task') {
+      if (notif.target_id) {
+        const foundTask = tasks.find(t => t.task_id === notif.target_id);
+        if (foundTask) {
+          handleStartTask(foundTask);
+          return;
+        }
+      }
+      setActiveView('questions');
+    } else if (notif.type === 'task_feedback') {
+      if (currentUserRole === 'student') {
+        if (notif.target_id) {
+          const foundTask = tasks.find(t => t.task_id === notif.target_id);
+          if (foundTask) {
+            handleStartTask(foundTask);
+            return;
+          }
+        }
+        setActiveView('student_progress');
+      } else {
+        setActiveView('reviews');
+      }
+    } else if (notif.type === 'oral_feedback') {
+      if (currentUserRole === 'student') {
+        setActiveView('oral_interview');
+      } else {
+        setActiveView('reviews');
+      }
+    } else if (notif.type === 'presentation_feedback') {
+      if (currentUserRole === 'student') {
+        setActiveView('presentation_module');
+      } else {
+        setActiveView('reviews');
+      }
+    } else {
+      setActiveView('dashboard');
     }
   };
 
@@ -247,7 +321,7 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased flex flex-col md:flex-row">
+    <div className="h-screen max-h-screen overflow-hidden bg-slate-950 text-slate-100 font-sans antialiased flex flex-col md:flex-row select-none">
       {/* SIDEBAR NAVIGATION (Samping Kiri) */}
       <Sidebar
         activeView={activeView}
@@ -276,15 +350,15 @@ export function App() {
       />
 
       {/* RIGHT MAIN LAYOUT */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* MOBILE TOP NAVIGATION BAR */}
-        <div className="md:hidden bg-slate-900 border-b border-slate-800 p-3 flex items-center justify-between sticky top-0 z-30">
+        <div className="md:hidden bg-slate-900/95 border-b border-slate-800 px-3 py-2 flex items-center justify-between sticky top-0 z-30 shrink-0">
           <button
             onClick={() => setIsOpenMobileSidebar(true)}
-            className="p-2 text-slate-300 hover:text-white bg-slate-800 rounded-xl border border-slate-700 flex items-center gap-2 text-xs font-bold cursor-pointer"
+            className="p-1.5 text-slate-300 hover:text-white bg-slate-800 rounded-lg border border-slate-700 flex items-center gap-1.5 text-xs font-bold cursor-pointer"
           >
-            <Menu className="w-5 h-5 text-emerald-400" />
-            <span>Menu Side Navigation</span>
+            <Menu className="w-4 h-4 text-emerald-400" />
+            <span>Menu Navigasi</span>
           </button>
 
           <span className="text-xs font-bold text-white truncate max-w-[150px]">
@@ -317,10 +391,19 @@ export function App() {
             }
           }}
           onLogout={handleLogout}
+          notifications={
+            currentUserRole === 'student'
+              ? notifications.filter(n => n.student_id === 'all' || n.student_id === currentStudentId)
+              : notifications
+          }
+          onMarkNotificationAsRead={handleMarkNotificationAsRead}
+          onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
+          onDeleteNotification={handleDeleteNotification}
+          onNotificationClick={handleNotificationClick}
         />
 
         {/* MAIN PAGE / CONTENT CONTAINER */}
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <main className="flex-1 overflow-y-auto px-3 sm:px-5 py-3 w-full scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
 
         {/* STUDENT VIEWS */}
         {currentUserRole === 'student' && currentStudentObj && (
@@ -335,6 +418,9 @@ export function App() {
                 oralSubmissions={oralSubmissions.filter(o => o.student_id === currentStudentId)}
                 presentationSubmissions={presentationSubmissions.filter(p => p.student_id === currentStudentId)}
                 topics={topics}
+                notifications={notifications.filter(n => n.student_id === 'all' || n.student_id === currentStudentId)}
+                onMarkNotificationAsRead={handleMarkNotificationAsRead}
+                onNotificationClick={handleNotificationClick}
                 onStartTask={handleStartTask}
                 onOpenSocraticTutor={() => setIsSocraticModalOpen(true)}
                 onOpenReflectionJournal={() => setActiveView('student_progress')}
@@ -423,12 +509,26 @@ export function App() {
                 students={students}
                 progressList={progressList}
                 quizResults={quizResults}
+                tasks={tasks}
+                topics={topics}
+                submissions={submissions}
+                oralSubmissions={oralSubmissions}
+                presentationSubmissions={presentationSubmissions}
                 onRefreshData={loadAllData}
               />
             )}
 
             {activeView === 'comparison' && (
               <StudentComparison students={students} progressList={progressList} />
+            )}
+
+            {activeView === 'curriculum' && (
+              <CurriculumManager
+                questions={questions}
+                topics={topics}
+                tasks={tasks}
+                onRefreshData={loadAllData}
+              />
             )}
 
             {activeView === 'reviews' && (
@@ -465,11 +565,6 @@ export function App() {
       {isSocraticModalOpen && (
         <SocraticTutorModal onClose={() => setIsSocraticModalOpen(false)} />
       )}
-
-      {/* FOOTER */}
-      <footer className="border-t border-slate-800 bg-slate-900/50 py-4 text-center text-xs text-slate-500">
-        LMS Pembelajaran Akuntansi SMK Berbasis Google AI Studio • Dual Language (ID/EN) • PJDM & AOL Architecture
-      </footer>
     </div>
   </div>
 );

@@ -19,7 +19,8 @@ import {
   Database,
   RefreshCw,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Calendar
 } from 'lucide-react';
 import { User, Student, Role } from '../types';
 
@@ -117,6 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'Dashboard Guru', icon: LayoutDashboard },
     { id: 'students', label: 'Manajemen Siswa', icon: Users },
     { id: 'comparison', label: 'Perbandingan Siswa', icon: BarChart2 },
+    { id: 'curriculum', label: 'Manajemen Kurikulum', icon: Calendar },
     { id: 'questions', label: 'Bank Soal Bilingual', icon: HelpCircle },
     { id: 'reviews', label: 'Penilaian Guru', icon: Award },
     { id: 'sheets_settings', label: 'Google Sheets & Audit', icon: FileSpreadsheet }
@@ -136,47 +138,47 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-slate-900 border-r border-slate-800 flex flex-col justify-between transition-transform duration-300 ease-in-out md:translate-x-0 md:static shadow-2xl ${
+        className={`fixed top-0 bottom-0 left-0 z-50 w-60 bg-slate-900/95 backdrop-blur-md border-r border-slate-800 flex flex-col justify-between transition-transform duration-300 ease-in-out md:translate-x-0 md:static shadow-xl shrink-0 h-full ${
           isOpenMobile ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* TOP BRAND HEADER */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-md shadow-emerald-900/40 shrink-0">
-              <GraduationCap className="w-6 h-6 text-slate-950" />
+        <div className="px-3.5 py-3 border-b border-slate-800 flex items-center justify-between shrink-0">
+          <div className="flex items-center space-x-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-md shadow-emerald-900/40 shrink-0">
+              <GraduationCap className="w-4 h-4 text-slate-950" />
             </div>
-            <div>
+            <div className="truncate">
               <div className="flex items-center space-x-1.5">
-                <h1 className="font-extrabold text-base tracking-tight text-white">LMS Akuntansi</h1>
-                <span className="px-1.5 py-0.2 text-[9px] font-bold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded">
-                  AI
+                <h1 className="font-extrabold text-sm tracking-tight text-white truncate">LMS Akuntansi</h1>
+                <span className="px-1 py-0.2 text-[8px] font-extrabold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded">
+                  PRO
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">SMK AKL • PJDM, AOL & Oral</p>
+              <p className="text-[10px] text-slate-400 truncate">SMK AKL • PJDM & AOL</p>
             </div>
           </div>
 
           <button
             onClick={() => setIsOpenMobile(false)}
-            className="md:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer"
+            className="md:hidden p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* ROLE BADGE & SWITCHERS */}
-        <div className="p-4 border-b border-slate-800/80 space-y-3 bg-slate-950/40">
+        <div className="px-3 py-2 border-b border-slate-800/80 space-y-1.5 bg-slate-950/40 shrink-0">
           <div className="flex items-center justify-between">
             {authenticatedRole === 'teacher' ? (
-              <span className="px-2.5 py-1 bg-purple-500/20 border border-purple-500/40 text-purple-300 rounded-lg text-xs font-bold flex items-center gap-1.5">
-                <Shield className="w-3.5 h-3.5 text-purple-400" />
-                Akses: Guru / Admin
+              <span className="px-2 py-0.5 bg-purple-500/15 border border-purple-500/30 text-purple-300 rounded text-[10px] font-extrabold flex items-center gap-1">
+                <Shield className="w-3 h-3 text-purple-400" />
+                Mode: Guru / Pelatih
               </span>
             ) : (
-              <span className="px-2.5 py-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1.5">
-                <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
-                Akses: Siswa SMK
+              <span className="px-2 py-0.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 rounded text-[10px] font-extrabold flex items-center gap-1">
+                <UserCheck className="w-3 h-3 text-emerald-400" />
+                Mode: Siswa SMK
               </span>
             )}
 
@@ -185,33 +187,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={onSyncSheets}
                 disabled={isSyncing}
-                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 rounded-lg transition cursor-pointer"
+                className="p-1 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 rounded transition cursor-pointer"
                 title="Sinkronkan Google Sheets"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
               </button>
             )}
           </div>
 
           {/* Teacher Mode Toggle (Preview Student Mode) */}
           {authenticatedRole === 'teacher' && onRoleChange && (
-            <div className="grid grid-cols-2 gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs font-bold">
+            <div className="grid grid-cols-2 gap-1 bg-slate-800/90 p-0.5 rounded-lg border border-slate-700 text-[10px] font-bold">
               <button
                 onClick={() => onRoleChange('teacher')}
-                className={`py-1.5 rounded-lg transition cursor-pointer flex items-center justify-center gap-1 ${
+                className={`py-1 rounded transition cursor-pointer flex items-center justify-center gap-1 ${
                   currentUserRole === 'teacher' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <Shield className="w-3 h-3" />
+                <Shield className="w-2.5 h-2.5" />
                 Guru
               </button>
               <button
                 onClick={() => onRoleChange('student')}
-                className={`py-1.5 rounded-lg transition cursor-pointer flex items-center justify-center gap-1 ${
+                className={`py-1 rounded transition cursor-pointer flex items-center justify-center gap-1 ${
                   currentUserRole === 'student' ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <UserCheck className="w-3 h-3" />
+                <UserCheck className="w-2.5 h-2.5" />
                 Siswa
               </button>
             </div>
@@ -219,14 +221,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Student Selector if Teacher is previewing student mode */}
           {authenticatedRole === 'teacher' && currentUserRole === 'student' && students.length > 0 && onStudentChange && (
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Pilih Siswa Pratinjau:
-              </label>
+            <div className="space-y-0.5">
               <select
                 value={selectedStudentId || selectedStudent?.student_id || ''}
                 onChange={e => onStudentChange(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 text-xs font-semibold text-emerald-300 rounded-xl px-2.5 py-1.5 outline-none cursor-pointer truncate"
+                className="w-full bg-slate-800 border border-slate-700 text-[10px] font-bold text-emerald-300 rounded px-2 py-1 outline-none cursor-pointer truncate"
               >
                 {students.map(s => (
                   <option key={s.student_id} value={s.student_id}>
@@ -239,9 +238,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* NAVIGATION LINKS */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-slate-800">
-          <div className="px-3 py-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-            Menu Utama Navigation
+        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5 scrollbar-thin scrollbar-thumb-slate-800">
+          <div className="px-2 py-1 text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">
+            Menu Navigasi
           </div>
 
           {navItems.map(item => {
@@ -252,20 +251,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between cursor-pointer group ${
+                className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-bold transition flex items-center justify-between cursor-pointer group ${
                   isActive
-                    ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-950/40 font-extrabold'
+                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-950/40 font-extrabold'
                     : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                 }`}
               >
-                <div className="flex items-center space-x-3 truncate">
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-950' : 'text-emerald-400 group-hover:scale-110 transition'}`} />
+                <div className="flex items-center space-x-2.5 truncate">
+                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-slate-950' : 'text-emerald-400 group-hover:scale-105 transition'}`} />
                   <span className="truncate">{item.label}</span>
                 </div>
 
                 {item.badge && (
                   <span
-                    className={`px-2 py-0.5 text-[10px] font-bold rounded-full border shrink-0 ${
+                    className={`px-1.5 py-0.2 text-[9px] font-bold rounded-full border shrink-0 ${
                       isActive ? 'bg-slate-900 text-emerald-300 border-emerald-400' : item.badgeColor || 'bg-slate-800 text-slate-300 border-slate-700'
                     }`}
                   >
@@ -278,34 +277,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* BOTTOM USER PROFILE & LOGOUT */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/60">
+        <div className="p-2.5 border-t border-slate-800 bg-slate-950/60 shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2.5 min-w-0">
+            <div className="flex items-center space-x-2 min-w-0">
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
                   alt={displayName}
-                  className="w-8 h-8 rounded-full object-cover border border-emerald-400 shrink-0"
+                  className="w-7 h-7 rounded-full object-cover border border-emerald-400 shrink-0"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-xs font-extrabold text-white shrink-0">
+                <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center text-[10px] font-extrabold text-white shrink-0">
                   {displayName.substring(0, 2).toUpperCase()}
                 </div>
               )}
 
               <div className="truncate min-w-0">
-                <div className="text-xs font-bold text-white truncate">{displayName}</div>
-                <div className="text-[10px] text-emerald-400 truncate">{displaySubtitle}</div>
+                <div className="text-[11px] font-bold text-white truncate">{displayName}</div>
+                <div className="text-[9px] text-emerald-400 truncate font-semibold">{displaySubtitle}</div>
               </div>
             </div>
 
             {onLogout && (
               <button
                 onClick={onLogout}
-                className="p-2 text-slate-400 hover:text-rose-400 bg-slate-800 hover:bg-rose-500/10 border border-slate-700 rounded-xl transition cursor-pointer shrink-0 ml-1"
+                className="p-1.5 text-slate-400 hover:text-rose-400 bg-slate-800 hover:bg-rose-500/10 border border-slate-700 rounded-lg transition cursor-pointer shrink-0 ml-1"
                 title="Keluar"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5" />
               </button>
             )}
           </div>

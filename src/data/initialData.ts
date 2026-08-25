@@ -12,7 +12,8 @@ import {
   OralSubmission,
   PresentationSubmission,
   AppSettings,
-  Material
+  Material,
+  AppNotification
 } from '../types';
 import { TOPICS_60, ALL_QUESTIONS_60 } from './questionBankData';
 
@@ -252,7 +253,7 @@ export const INITIAL_MATERIALS: Material[] = [
 ];
 
 export const INITIAL_TASKS: Task[] = [
-  // 1. TEORI UTAMA 1: PERSEDIAAN
+  // 1. PERTEMUAN 1: TEORI UTAMA 1 - PERSEDIAAN
   {
     task_id: 'tsk_theory_01',
     topic_id: 'top_01',
@@ -261,11 +262,13 @@ export const INITIAL_TASKS: Task[] = [
     deskripsi: 'Kerjakan 20 soal teori bilingual Middle & HOTS seputar metode FIFO, LIFO, Average, dan pencatatan kartu persediaan perpetual.',
     deadline: '2026-08-25',
     urutan: 1,
+    pertemuan: 1,
+    pertemuan_judul: 'Pertemuan 1: Penguasaan Teori Persediaan & Penilaian HPP',
     wajib: true,
     status: 'sedang_dikerjakan',
     max_score: 100
   },
-  // 2. TEORI UTAMA 2: PIUTANG USAHA
+  // 2. PERTEMUAN 2: TEORI UTAMA 2 - PIUTANG USAHA
   {
     task_id: 'tsk_theory_02',
     topic_id: 'top_02',
@@ -274,12 +277,14 @@ export const INITIAL_TASKS: Task[] = [
     deskripsi: 'Kerjakan 20 soal teori bilingual Middle & HOTS seputar pengakuan piutang, termin 2/10 n/30, dan cadangan kerugian piutang.',
     deadline: '2026-08-26',
     urutan: 2,
+    pertemuan: 2,
+    pertemuan_judul: 'Pertemuan 2: Piutang Dagang & Cadangan Kerugian Piutang',
     wajib: true,
     status: 'belum_mulai',
     prerequisite_task_id: 'tsk_theory_01',
     max_score: 100
   },
-  // 3. TEORI UTAMA 3: KAS KECIL
+  // 3. PERTEMUAN 3: TEORI UTAMA 3 - KAS KECIL
   {
     task_id: 'tsk_theory_03',
     topic_id: 'top_03',
@@ -288,12 +293,14 @@ export const INITIAL_TASKS: Task[] = [
     deskripsi: 'Kerjakan 20 soal teori bilingual Middle & HOTS seputar pembentukan, pengeluaran kas kecil, dan pengisian kembali.',
     deadline: '2026-08-27',
     urutan: 3,
+    pertemuan: 3,
+    pertemuan_judul: 'Pertemuan 3: Pengelolaan Kas Kecil Sistem Imprest & Fluktuasi',
     wajib: true,
     status: 'belum_mulai',
     prerequisite_task_id: 'tsk_theory_02',
     max_score: 100
   },
-  // 4. TEORI UTAMA 4: KAS BANK
+  // 4. PERTEMUAN 4: TEORI UTAMA 4 - KAS BANK & REKONSILIASI
   {
     task_id: 'tsk_theory_04',
     topic_id: 'top_04',
@@ -302,12 +309,14 @@ export const INITIAL_TASKS: Task[] = [
     deskripsi: 'Kerjakan 20 soal teori bilingual Middle & HOTS seputar setoran dalam perjalanan (DIT), cek beredar (OC), dan rekonsiliasi saldo kas.',
     deadline: '2026-08-28',
     urutan: 4,
+    pertemuan: 4,
+    pertemuan_judul: 'Pertemuan 4: Kas Bank & Penyusunan Rekonsiliasi Bank',
     wajib: true,
     status: 'belum_mulai',
     prerequisite_task_id: 'tsk_theory_03',
     max_score: 100
   },
-  // 5. TEORI UTAMA 5: ASET TETAP
+  // 5. PERTEMUAN 5: TEORI UTAMA 5 - ASET TETAP & PENYUSUTAN
   {
     task_id: 'tsk_theory_05',
     topic_id: 'top_05',
@@ -316,12 +325,14 @@ export const INITIAL_TASKS: Task[] = [
     deskripsi: 'Kerjakan 20 soal teori bilingual Middle & HOTS seputar harga perolehan, metode penyusutan (Garis Lurus, Saldo Menurun, Unit Produksi), dan pelepasan aset.',
     deadline: '2026-08-29',
     urutan: 5,
+    pertemuan: 5,
+    pertemuan_judul: 'Pertemuan 5: Pengakuan & Perhitungan Penyusutan Aset Tetap',
     wajib: true,
     status: 'belum_mulai',
     prerequisite_task_id: 'tsk_theory_04',
     max_score: 100
   },
-  // 6. PRAKTIK PJDM (HANYA TERBUKA SETELAH 5 TEORI UTAMA SELESAI)
+  // 6. PERTEMUAN 6: PRAKTIK PJDM (HANYA TERBUKA SETELAH 5 TEORI UTAMA SELESAI)
   {
     task_id: 'tsk_pjdm_01',
     topic_id: 'top_01',
@@ -332,12 +343,14 @@ export const INITIAL_TASKS: Task[] = [
     link_tugas: 'https://docs.google.com/spreadsheets/d/sample-pjdm-template',
     deadline: '2026-09-01',
     urutan: 6,
+    pertemuan: 6,
+    pertemuan_judul: 'Pertemuan 6: Praktik Siklus Akuntansi Manual (PJDM)',
     wajib: true,
     status: 'belum_mulai',
     prerequisite_task_id: 'tsk_theory_05',
     max_score: 100
   },
-  // 7. PRAKTIK AOL (HANYA TERBUKA SETELAH PJDM SELESAI)
+  // 7. PERTEMUAN 7: PRAKTIK AOL (HANYA TERBUKA SETELAH PJDM SELESAI)
   {
     task_id: 'tsk_aol_01',
     topic_id: 'top_01',
@@ -348,12 +361,14 @@ export const INITIAL_TASKS: Task[] = [
     link_tugas: 'https://aol-app.smk.id/task/01',
     deadline: '2026-09-05',
     urutan: 7,
+    pertemuan: 7,
+    pertemuan_judul: 'Pertemuan 7: Komputer Akuntansi Accurate Online (AOL)',
     wajib: true,
     status: 'belum_mulai',
     prerequisite_task_id: 'tsk_pjdm_01',
     max_score: 100
   },
-  // 8. PRESENTASI & MATERI
+  // 8. PERTEMUAN 8: PRESENTASI & MATERI
   {
     task_id: 'tsk_pres_01',
     topic_id: 'top_01',
@@ -363,6 +378,8 @@ export const INITIAL_TASKS: Task[] = [
     link_materi: 'https://drive.google.com/file/d/sample-pres-guide',
     deadline: '2026-09-10',
     urutan: 8,
+    pertemuan: 8,
+    pertemuan_judul: 'Pertemuan 8: Pemaparan Video Presentasi & Wawancara Juri LKS',
     wajib: true,
     status: 'belum_mulai',
     prerequisite_task_id: 'tsk_aol_01',
@@ -536,3 +553,58 @@ export const INITIAL_SETTINGS: AppSettings = {
   enable_socratic_tutor: true,
   passing_grade_default: 75
 };
+
+export const INITIAL_NOTIFICATIONS: AppNotification[] = [
+  {
+    id: 'notif_01',
+    student_id: 'std_01',
+    type: 'task_feedback',
+    title: 'Feedback Tugas Diterima: Nilai 92',
+    message: 'Guru memberikan evaluasi pada tugas Praktik PJDM - Kas Kecil: "Pencatatan metode imprest sangat rapi dan rekonsiliasi tepat. Pertahankan!"',
+    target_type: 'task',
+    target_id: 'tsk_02',
+    score: 92,
+    feedback: 'Pencatatan metode imprest sangat rapi dan rekonsiliasi tepat. Pertahankan!',
+    created_at: '2026-08-24T08:30:00.000Z',
+    read: false,
+    sender_name: 'Dra. Endang Rahayu, M.Pd.'
+  },
+  {
+    id: 'notif_02',
+    student_id: 'all',
+    type: 'new_task',
+    title: 'Tugas Baru: Praktik PJDM - Aset Tetap & Depresiasi',
+    message: 'Guru menambahkan tugas baru "Praktik PJDM - Aset Tetap & Depresiasi" (Tenggat: 30 Agustus 2026). Silakan buka Alur Pembelajaran untuk mulai mengerjakan.',
+    target_type: 'task',
+    target_id: 'tsk_03',
+    created_at: '2026-08-23T14:15:00.000Z',
+    read: false,
+    sender_name: 'Dra. Endang Rahayu, M.Pd.'
+  },
+  {
+    id: 'notif_03',
+    student_id: 'std_01',
+    type: 'oral_feedback',
+    title: 'Feedback Wawancara Oral AI: Nilai 90',
+    message: 'Guru mengulas rekaman wawancara lisan: "Sangat bagus Andi! Penjelasan terdengar lugas dan penuh percaya diri."',
+    target_type: 'oral',
+    target_id: 'oral_sub_01',
+    score: 90,
+    feedback: 'Sangat bagus Andi! Penjelasan terdengar lugas dan penuh percaya diri.',
+    created_at: '2026-08-22T10:00:00.000Z',
+    read: true,
+    sender_name: 'Dra. Endang Rahayu, M.Pd.'
+  },
+  {
+    id: 'notif_04',
+    student_id: 'all',
+    type: 'announcement',
+    title: 'Simulasi LKS SMK Akuntansi 2026 Dimulai',
+    message: 'Persiapkan seluruh materi Teori, PJDM, dan AOL. Kerjakan kuis penguatan HOTS untuk meningkatkan XP dan peringkat leaderboard.',
+    target_type: 'general',
+    created_at: '2026-08-20T07:00:00.000Z',
+    read: true,
+    sender_name: 'Pelatih LKS Akuntansi'
+  }
+];
+

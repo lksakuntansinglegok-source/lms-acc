@@ -66,13 +66,15 @@ export interface PracticalExercise {
   id: string;
   topic_id: string;
   judul: string;
-  tipe_praktik: 'PJDM' | 'AOL' | 'Kas Kecil' | 'Persediaan' | 'Kertas Kerja';
+  tipe_praktik: 'PJDM' | 'AOL' | 'PJDM & AOL' | 'Kas Kecil' | 'Persediaan' | 'Kertas Kerja';
+  target_types?: ('PJDM' | 'AOL')[];
   deskripsi: string;
   link_spreadsheet: string;
   link_petunjuk?: string;
   deadline?: string;
   max_score?: number;
   kompetensi?: string;
+  task_ids?: string[];
 }
 
 export interface PresentationInterviewQuestions {
@@ -113,6 +115,8 @@ export interface Task {
   link_tugas?: string;
   deadline: string;
   urutan: number;
+  pertemuan?: number;
+  pertemuan_judul?: string;
   wajib: boolean;
   status: 'belum_mulai' | 'sedang_dikerjakan' | 'selesai' | 'terlambat';
   prerequisite_task_id?: string;
@@ -264,4 +268,57 @@ export interface ReflectionJournal {
   bagian_tersekat: string;
   rencana_perbaikan: string;
   created_at: string;
+}
+
+export interface EvaluationAspect {
+  score: number; // 0 - 100
+  level: string; // e.g. 'Sangat Baik' | 'Baik' | 'Cukup' | 'Perlu Bimbingan'
+  catatan: string; // Deskripsi penilaian kualitatif guru
+}
+
+export interface StudentTeacherEvaluation {
+  student_id: string;
+  penguasaan_materi: EvaluationAspect;
+  mental: EvaluationAspect;
+  penguasaan_aplikasi: EvaluationAspect;
+  ketelitian: EvaluationAspect;
+  rekomendasi_khusus: string;
+  status_kesiapan_lks?: 'Siap Utama' | 'Cadangan Unggulan' | 'Dalam Pembinaan' | 'Perlu Pemantapan';
+  target_fokus?: string;
+  updated_at: string;
+  updated_by?: string;
+}
+
+export interface CurriculumMeeting {
+  meeting_id: string;
+  pertemuan_ke: number;
+  judul_pertemuan: string;
+  deskripsi: string;
+  topic_id: string;
+  target_durasi_menit: number;
+  tanggal_pelaksanaan?: string;
+  status: 'aktif' | 'terjadwal' | 'selesai' | 'draft';
+  selected_question_ids?: string[];
+  selected_practical_ids?: string[];
+  selected_presentation_topic_ids?: string[];
+  custom_task_ids?: string[];
+  catatan_instruktur?: string;
+  target_kompetensi?: string[];
+  prerequisite_meeting_id?: string;
+  is_published?: boolean;
+}
+
+export interface AppNotification {
+  id: string;
+  student_id: string; // 'all' or specific student_id (e.g. 'std_01')
+  type: 'new_task' | 'task_feedback' | 'oral_feedback' | 'presentation_feedback' | 'announcement' | 'remedial_alert';
+  title: string;
+  message: string;
+  target_type?: 'task' | 'oral' | 'presentation' | 'quiz' | 'learning_path' | 'general';
+  target_id?: string;
+  score?: number;
+  feedback?: string;
+  created_at: string;
+  read: boolean;
+  sender_name?: string;
 }
