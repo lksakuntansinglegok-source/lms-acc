@@ -18,7 +18,8 @@ import {
   INITIAL_ORAL_SUBMISSIONS,
   INITIAL_PRESENTATION_SUBMISSIONS,
   INITIAL_SETTINGS,
-  INITIAL_NOTIFICATIONS
+  INITIAL_NOTIFICATIONS,
+  INITIAL_LKS_REPORTS
 } from './src/data/initialData';
 import {
   Student,
@@ -32,7 +33,8 @@ import {
   StudentProgress,
   AppSettings,
   AuditLog,
-  AppNotification
+  AppNotification,
+  LKSReportSubmission
 } from './src/types';
 
 // In-Memory Data Store (Initialized with defaults)
@@ -50,6 +52,7 @@ let dbSubmissions: Submission[] = [...INITIAL_SUBMISSIONS];
 let dbOralSubmissions: OralSubmission[] = [...INITIAL_ORAL_SUBMISSIONS];
 let dbPresentationSubmissions: PresentationSubmission[] = [...INITIAL_PRESENTATION_SUBMISSIONS];
 let dbNotifications: AppNotification[] = [...INITIAL_NOTIFICATIONS];
+let dbLKSReports: LKSReportSubmission[] = [...INITIAL_LKS_REPORTS];
 let dbSettings: AppSettings = { ...INITIAL_SETTINGS };
 let dbAuditLogs: AuditLog[] = [
   {
@@ -937,6 +940,114 @@ async function startServer() {
     if (idx !== -1) {
       const removed = dbSubmissions.splice(idx, 1)[0];
       logActivity('Admin/Guru', 'tch_01', 'Menghapus Submission Task', removed.submission_id);
+    }
+    res.json({ success: true });
+  });
+
+  // 5.25 LKS PRACTICE REPORTS (PJDM & AOL PT ... Net Profit / Loss & Elapsed Duration)
+  app.get('/api/lks-reports', (req: Request, res: Response) => {
+    const { student_id } = req.query;
+    if (student_id && typeof student_id === 'string') {
+      const filtered = dbLKSReports.filter(r => r.student_id === student_id);
+      return res.json(filtered);
+    }
+    res.json(dbLKSReports);
+  });
+
+  app.post('/api/lks-reports', (req: Request, res: Response) => {
+    const student = dbStudents.find(s => s.student_id === req.body.student_id);
+    const newReport: LKSReportSubmission = {
+      id: 'lks_rep_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      student_id: req.body.student_id,
+      student_name: student?.nama || req.body.student_name || 'Siswa AKL',
+      student_kelas: student?.kelas || req.body.student_kelas || 'XI AKL 1',
+      pt_name: req.body.pt_name || 'PT Kasus LKS',
+      tipe_pengerjaan: req.body.tipe_pengerjaan || 'Praktik Manual (PJDM)',
+      status_laba_rugi: req.body.status_laba_rugi || 'Laba Bersih',
+      nilai_laba_rugi: Number(req.body.nilai_laba_rugi) || 0,
+      waktu_pengerjaan_menit: Number(req.body.waktu_pengerjaan_menit) || 60,
+      tanggal_pengerjaan: req.body.tanggal_pengerjaan || new Date().toISOString().split('T')[0],
+      pertemuan_ke: req.body.pertemuan_ke ? Number(req.body.pertemuan_ke) : undefined,
+      file_url_or_link: req.body.file_url_or_link || '',
+      catatan_rekonsiliasi: req.body.catatan_rekonsiliasi || '',
+      status: 'pending',
+      created_at: new Date().toISOString()
+    };
+    dbLKSReports.unshift(newReport);
+
+    // Increase XP for student
+    const studentIdx = dbStudents.findIndex(s => s.student_id === req.body.student_id);
+    if (studentIdx !== -1) {
+      dbStudents[studentIdx].xp += 200;
+      if (dbStudents[studentIdx].xp > dbStudents[studentIdx].level * 400) {
+        dbStudents[studentIdx].level += 1;
+      }
+    }
+
+    logActivity(
+      'Siswa',
+      req.body.student_id,
+      `Melaporkan Hasil Praktik LKS: ${newReport.pt_name}`,
+      `Tipe: ${newReport.tipe_pengerjaan}, Hasil: ${newReport.status_laba_rugi} Rp ${newReport.nilai_laba_rugi.toLocaleString('id-ID')}, Durasi: ${newReport.waktu_pengerjaan_menit} Menit`
+    );
+
+    res.json(newReport);
+  });
+
+  app.put('/api/lks-reports/:id', (req: Request, res: Response) => {
+    const idx = dbLKSReports.findIndex(r => r.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ error: 'LKS report not found' });
+    dbLKSReports[idx] = {
+      ...dbLKSReports[idx],
+      ...req.body,
+      updated_at: new Date().toISOString()
+    };
+    res.json(dbLKSReports[idx]);
+  });
+
+  app.put('/api/lks-reports/:id/review', (req: Request, res: Response) => {
+    const idx = dbLKSReports.findIndex(r => r.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ error: 'LKS report not found' });
+    
+    const score = Number(req.body.teacher_score) || 90;
+    const feedback = req.body.teacher_feedback || 'Laporan praktik telah ditinjau dan diverifikasi guru.';
+    const status = req.body.status || 'reviewed';
+
+    dbLKSReports[idx] = {
+      ...dbLKSReports[idx],
+      teacher_score: score,
+      teacher_feedback: feedback,
+      status,
+      updated_at: new Date().toISOString()
+    };
+
+    logActivity('Admin/Guru', 'tch_01', `Verifikasi Laporan LKS ${dbLKSReports[idx].pt_name}`, `Nilai: ${score}`);
+
+    // Create in-app notification for the student
+    const notif: AppNotification = {
+      id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      student_id: dbLKSReports[idx].student_id,
+      type: 'task_feedback',
+      title: `Hasil Praktik ${dbLKSReports[idx].pt_name} Telah Diverifikasi: Nilai ${score}`,
+      message: `Guru telah meninjau laporan laba/rugi & waktu pengerjaan: "${feedback}"`,
+      target_type: 'task',
+      target_id: dbLKSReports[idx].id,
+      score,
+      feedback,
+      created_at: new Date().toISOString(),
+      read: false,
+      sender_name: 'Dra. Endang Rahayu, M.Pd.'
+    };
+    dbNotifications.unshift(notif);
+
+    res.json(dbLKSReports[idx]);
+  });
+
+  app.delete('/api/lks-reports/:id', (req: Request, res: Response) => {
+    const idx = dbLKSReports.findIndex(r => r.id === req.params.id);
+    if (idx !== -1) {
+      const removed = dbLKSReports.splice(idx, 1)[0];
+      logActivity('Admin/Guru', 'tch_01', 'Menghapus Laporan LKS', removed.pt_name);
     }
     res.json({ success: true });
   });

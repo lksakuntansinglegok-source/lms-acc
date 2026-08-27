@@ -20,7 +20,8 @@ import {
   RefreshCw,
   Clock,
   AlertCircle,
-  Calendar
+  Calendar,
+  Building2
 } from 'lucide-react';
 import { User, Student, Role } from '../types';
 
@@ -98,14 +99,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-500/40'
     },
     {
-      id: 'questions',
-      label: 'Bank Soal & Praktik',
-      icon: HelpCircle
-    },
-    {
-      id: 'presentation_module',
-      label: 'Presentasi & Materi',
-      icon: Video
+      id: 'lks_reports',
+      label: 'Laporan Praktik LKS (PT ...)',
+      icon: Building2
     },
     {
       id: 'student_progress',
@@ -120,6 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'comparison', label: 'Perbandingan Siswa', icon: BarChart2 },
     { id: 'curriculum', label: 'Manajemen Kurikulum', icon: Calendar },
     { id: 'questions', label: 'Bank Soal Bilingual', icon: HelpCircle },
+    { id: 'lks_reports', label: 'Laporan LKS Siswa', icon: Building2 },
     { id: 'reviews', label: 'Penilaian Guru', icon: Award },
     { id: 'sheets_settings', label: 'Google Sheets & Audit', icon: FileSpreadsheet }
   ];

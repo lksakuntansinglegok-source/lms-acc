@@ -15,6 +15,7 @@ import { StudentComparison } from './components/StudentComparison';
 import { LearningPathEditor } from './components/LearningPathEditor';
 import { CurriculumManager } from './components/CurriculumManager';
 import { QuestionBankManager } from './components/QuestionBankManager';
+import { LKSReportManager } from './components/LKSReportManager';
 import { SubmissionsReview } from './components/SubmissionsReview';
 import { TeacherAnalytics } from './components/TeacherAnalytics';
 import { GoogleSheetsSettings } from './components/GoogleSheetsSettings';
@@ -462,6 +463,14 @@ export function App() {
               />
             )}
 
+            {activeView === 'lks_reports' && (
+              <LKSReportManager
+                currentUserRole={currentUserRole}
+                currentStudent={currentStudentObj}
+                onRefreshData={() => loadAllData()}
+              />
+            )}
+
             {activeView === 'student_progress' && (
               <StudentProgressView
                 student={currentStudentObj}
@@ -474,22 +483,29 @@ export function App() {
           </>
         )}
 
-        {/* SHARED VIEW: BANK SOAL & PRAKTIK */}
-        {activeView === 'questions' && (
-          <QuestionBankManager
-            questions={questions}
-            topics={topics}
-            tasks={tasks}
-            currentUserRole={currentUserRole}
-            onRefreshData={loadAllData}
-            onStartTask={handleStartTask}
-            onNavigateView={(view) => setActiveView(view as any)}
-          />
-        )}
-
         {/* TEACHER VIEWS */}
         {currentUserRole === 'teacher' && (
           <>
+            {activeView === 'questions' && (
+              <QuestionBankManager
+                questions={questions}
+                topics={topics}
+                tasks={tasks}
+                currentUserRole={currentUserRole}
+                onRefreshData={loadAllData}
+                onStartTask={handleStartTask}
+                onNavigateView={(view) => setActiveView(view as any)}
+              />
+            )}
+
+            {activeView === 'lks_reports' && (
+              <LKSReportManager
+                currentUserRole={currentUserRole}
+                currentStudent={null}
+                onRefreshData={() => loadAllData()}
+              />
+            )}
+
             {activeView === 'dashboard' && (
               <TeacherDashboard
                 students={students}

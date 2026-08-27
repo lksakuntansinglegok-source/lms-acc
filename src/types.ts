@@ -322,3 +322,25 @@ export interface AppNotification {
   read: boolean;
   sender_name?: string;
 }
+
+export interface LKSReportSubmission {
+  id: string;
+  student_id: string;
+  student_name?: string;
+  student_kelas?: string;
+  pt_name: string; // Nama Entitas / Kasus Soal LKS e.g. "PT Jaya Sentosa"
+  tipe_pengerjaan: 'Praktik Manual (PJDM)' | 'Praktik AOL (Accurate Online)' | 'Kombinasi Manual & AOL';
+  status_laba_rugi: 'Laba Bersih' | 'Rugi Bersih' | 'Impas (Break Even)';
+  nilai_laba_rugi: number; // Nilai Laba/Rugi Bersih dalam Rupiah
+  waktu_pengerjaan_menit: number; // Durasi pengerjaan dalam menit
+  tanggal_pengerjaan: string;
+  pertemuan_ke?: number; // Terkait Pertemuan Kurikulum ke-#
+  file_url_or_link?: string; // Link Drive / Spreadsheet / File Database AOL / Bukti
+  catatan_rekonsiliasi?: string; // Catatan temuan penyesuaian, selisih kas/bank, tahapan
+  teacher_feedback?: string;
+  teacher_score?: number;
+  status: 'pending' | 'reviewed' | 'needs_revision';
+  created_at: string;
+  updated_at?: string;
+}
+

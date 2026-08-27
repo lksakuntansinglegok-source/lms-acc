@@ -15,7 +15,8 @@ import {
   Material,
   OralQuestion,
   PresentationInterviewQuestions,
-  AppNotification
+  AppNotification,
+  LKSReportSubmission
 } from '../types';
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
@@ -205,6 +206,31 @@ export const api = {
     fetchJson<Submission>(`/api/submissions/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
   deleteSubmission: (id: string) =>
     fetchJson<{ success: boolean }>(`/api/submissions/${id}`, { method: 'DELETE' }),
+
+  // LKS Practice Reports (PT ..., Nilai Laba/Rugi, Waktu Pengerjaan Manual PJDM & AOL)
+  getLKSReports: (studentId?: string) => {
+    const url = studentId ? `/api/lks-reports?student_id=${encodeURIComponent(studentId)}` : '/api/lks-reports';
+    return fetchJson<LKSReportSubmission[]>(url);
+  },
+  createLKSReport: (report: Partial<LKSReportSubmission>) =>
+    fetchJson<LKSReportSubmission>('/api/lks-reports', {
+      method: 'POST',
+      body: JSON.stringify(report)
+    }),
+  updateLKSReport: (id: string, updates: Partial<LKSReportSubmission>) =>
+    fetchJson<LKSReportSubmission>(`/api/lks-reports/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    }),
+  reviewLKSReport: (id: string, data: { teacher_score: number; teacher_feedback: string; status?: 'reviewed' | 'needs_revision' }) =>
+    fetchJson<LKSReportSubmission>(`/api/lks-reports/${id}/review`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+  deleteLKSReport: (id: string) =>
+    fetchJson<{ success: boolean }>(`/api/lks-reports/${id}`, {
+      method: 'DELETE'
+    }),
 
   // Progress & Audit & Settings
   getProgress: () => fetchJson<StudentProgress[]>('/api/progress'),

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Question, Topic, Task, PracticalExercise, PresentationTopicItem } from '../types';
 import { PRESENTATION_TOPICS_60 } from '../data/presentationTopicsData';
+import { DEFAULT_PRACTICAL_EXERCISES } from '../data/practicalExercisesData';
 import { api } from '../services/api';
 import { ConfirmModal } from './ConfirmModal';
 import {
@@ -54,75 +55,6 @@ interface QuestionBankManagerProps {
   onStartTask?: (task: Task) => void;
   onNavigateView?: (view: string) => void;
 }
-
-// Initial Practical Exercises Catalog (Focused on PJDM and AOL)
-const DEFAULT_PRACTICAL_EXERCISES: PracticalExercise[] = [
-  {
-    id: 'prak_01',
-    topic_id: 'top_01',
-    tipe_praktik: 'PJDM',
-    target_types: ['PJDM'],
-    judul: 'Praktik PJDM: Analisis 10 Transaksi & Siklus Jurnal Bengkel Jaya',
-    deskripsi: 'Input 10 transaksi bisnis Bengkel Jaya ke spreadsheet PJDM, posting jurnal umum, buku besar, dan pastikan Neraca Saldo seimbang.',
-    link_spreadsheet: 'https://docs.google.com/spreadsheets/d/1sample-pjdm-bengkel-jaya/edit#gid=0',
-    link_petunjuk: 'https://drive.google.com/file/d/sample-petunjuk-pjdm-topik01/view',
-    deadline: '2026-09-15',
-    max_score: 100,
-    kompetensi: 'Pengoperasian Jurnal Dasar & Memori (PJDM)'
-  },
-  {
-    id: 'prak_02',
-    topic_id: 'top_01',
-    tipe_praktik: 'AOL',
-    target_types: ['AOL'],
-    judul: 'Praktik AOL: Setup Master Data Barang, Pelanggan & Faktur Penjualan',
-    deskripsi: 'Login ke modul software Accurate Online (AOL), buat master data pelanggan dan barang dagang, lalu posting 5 faktur penjualan kredit.',
-    link_spreadsheet: 'https://aol-app.smk.id/simulasi/task/01',
-    link_petunjuk: 'https://drive.google.com/file/d/sample-guide-aol-01/view',
-    deadline: '2026-09-20',
-    max_score: 100,
-    kompetensi: 'Akuntansi Online (AOL) & Komputer Akuntansi'
-  },
-  {
-    id: 'prak_03',
-    topic_id: 'top_01',
-    tipe_praktik: 'PJDM & AOL',
-    target_types: ['PJDM', 'AOL'],
-    judul: 'Praktik PJDM & AOL: Rekonsiliasi Bank & Kertas Kerja Laporan Keuangan',
-    deskripsi: 'Kerjakan lembar kerja rekonsiliasi kas bank 4 kolom pada spreadsheet PJDM dan lakukan sinkronisasi mutasi rekening koran pada modul kas bank AOL.',
-    link_spreadsheet: 'https://docs.google.com/spreadsheets/d/1sample-petty-cash-reconciliation/edit#gid=0',
-    link_petunjuk: 'https://drive.google.com/file/d/sample-petunjuk-kas-bank/view',
-    deadline: '2026-09-25',
-    max_score: 100,
-    kompetensi: 'Siklus Akuntansi Manual PJDM & Digital AOL'
-  },
-  {
-    id: 'prak_04',
-    topic_id: 'top_01',
-    tipe_praktik: 'PJDM',
-    target_types: ['PJDM'],
-    judul: 'Praktik PJDM: Kartu Persediaan FIFO Perpetual & Jurnal Penyesuaian',
-    deskripsi: 'Susun kartu persediaan barang dagang perpetual FIFO, hitung HPP, dan catat ayat jurnal penyesuaian (AJP) akhir periode.',
-    link_spreadsheet: 'https://docs.google.com/spreadsheets/d/1sample-fifo-perpetual/edit#gid=0',
-    link_petunjuk: 'https://drive.google.com/file/d/sample-petunjuk-fifo/view',
-    deadline: '2026-09-28',
-    max_score: 100,
-    kompetensi: 'Penilaian Persediaan & Penyesuaian PJDM'
-  },
-  {
-    id: 'prak_05',
-    topic_id: 'top_01',
-    tipe_praktik: 'AOL',
-    target_types: ['AOL'],
-    judul: 'Praktik AOL: Siklus Pembelian, PPN Masukan & Pembayaran Kas/Bank',
-    deskripsi: 'Proses pesanan pembelian (PO), penerimaan barang dagang, faktur pembelian dengan PPN, serta pembayaran via kas/bank di AOL.',
-    link_spreadsheet: 'https://aol-app.smk.id/simulasi/task/02',
-    link_petunjuk: 'https://drive.google.com/file/d/sample-guide-aol-02/view',
-    deadline: '2026-09-30',
-    max_score: 100,
-    kompetensi: 'Siklus Pembelian & Kas Bank Accurate Online'
-  }
-];
 
 // Initial Presentation Topics Catalog
 const DEFAULT_PRESENTATION_TOPICS: PresentationTopicItem[] = [
@@ -229,6 +161,44 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
   const [selectedTopicId, setSelectedTopicId] = useState<string>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
   const [selectedPracticeType, setSelectedPracticeType] = useState<string>('all');
+  const [deliveryStatusFilter, setDeliveryStatusFilter] = useState<'all' | 'delivered' | 'not_delivered'>('all');
+
+  // Loaded Curriculum Meetings from teacher's configuration
+  const [curriculumMeetings, setCurriculumMeetings] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('lms_curriculum_meetings');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [];
+  });
+
+  // Real-time synchronization when teacher modifies curriculum
+  React.useEffect(() => {
+    const handleCurriculumSync = () => {
+      try {
+        const saved = localStorage.getItem('lms_curriculum_meetings');
+        if (saved) setCurriculumMeetings(JSON.parse(saved));
+        else setCurriculumMeetings([]);
+      } catch (e) {
+        console.error('Failed to sync curriculum meetings in question bank', e);
+      }
+    };
+
+    window.addEventListener('lms_data_updated', handleCurriculumSync);
+    window.addEventListener('storage', handleCurriculumSync);
+    return () => {
+      window.removeEventListener('lms_data_updated', handleCurriculumSync);
+      window.removeEventListener('storage', handleCurriculumSync);
+    };
+  }, []);
+
+  // Helper to check which meetings have delivered this question
+  const getQuestionDeliveredMeetings = (questionId: string): number[] => {
+    return curriculumMeetings
+      .filter(m => Array.isArray(m.selected_question_ids) && m.selected_question_ids.includes(questionId))
+      .map(m => m.pertemuan_ke)
+      .sort((a, b) => a - b);
+  };
 
   // Data State for Practical & Presentation (with localStorage persistence)
   const [practicalList, setPracticalList] = useState<PracticalExercise[]>(() => {
@@ -406,7 +376,14 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
     const matchesTopic = selectedTopicId === 'all' || q.topic_id === selectedTopicId;
     const matchesDifficulty = selectedDifficulty === 'all' || q.difficulty === selectedDifficulty;
 
-    return matchesSearch && matchesTopic && matchesDifficulty;
+    const deliveredIn = getQuestionDeliveredMeetings(q.question_id);
+    const isDelivered = deliveredIn.length > 0;
+    const matchesDelivery =
+      deliveryStatusFilter === 'all' ||
+      (deliveryStatusFilter === 'delivered' && isDelivered) ||
+      (deliveryStatusFilter === 'not_delivered' && !isDelivered);
+
+    return matchesSearch && matchesTopic && matchesDifficulty && matchesDelivery;
   });
 
   // Filter Practical (PJDM & AOL)
@@ -1076,8 +1053,20 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
   const handleResetDefaultTopics = () => {
     setPresentationTopicsList(PRESENTATION_TOPICS_60);
     localStorage.setItem('lms_presentation_topics', JSON.stringify(PRESENTATION_TOPICS_60));
+    window.dispatchEvent(new CustomEvent('lms_data_updated', { detail: { type: 'presentation' } }));
     setIsResetDefaultTopicsModalOpen(false);
     setPresSuccessToast('Daftar topik presentasi telah di-reset kembali ke 60 Topik Standar LKS!');
+    setTimeout(() => setPresSuccessToast(null), 3000);
+  };
+
+  // Reset Default Practical Exercises
+  const [isResetDefaultPracticalsModalOpen, setIsResetDefaultPracticalsModalOpen] = useState(false);
+  const handleResetDefaultPracticals = () => {
+    setPracticalList(DEFAULT_PRACTICAL_EXERCISES);
+    localStorage.setItem('lms_practical_list', JSON.stringify(DEFAULT_PRACTICAL_EXERCISES));
+    window.dispatchEvent(new CustomEvent('lms_data_updated', { detail: { type: 'practicals' } }));
+    setIsResetDefaultPracticalsModalOpen(false);
+    setPresSuccessToast('Daftar modul praktik PJDM & AOL telah di-reset kembali ke Modul Standar LKS!');
     setTimeout(() => setPresSuccessToast(null), 3000);
   };
 
@@ -1219,7 +1208,7 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
 
       {/* SEARCH & FILTERS BAR */}
       {activeTab !== 'praktik' && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+        <div className={`grid grid-cols-1 ${activeTab === 'teori' ? 'sm:grid-cols-4' : 'sm:grid-cols-2'} gap-3 bg-slate-900 border border-slate-800 p-3.5 rounded-2xl`}>
           <div className="relative">
             <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
             <input
@@ -1241,7 +1230,7 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
               onChange={e => setSelectedTopicId(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 text-xs text-slate-200 font-semibold rounded-xl px-3 py-2.5 outline-none cursor-pointer"
             >
-              <option value="all">Semua Topik Akuntansi ({topics.length} Topik Pilihan)</option>
+              <option value="all">Semua Topik ({topics.length} Topik)</option>
               {topics.map(t => (
                 <option key={t.topic_id} value={t.topic_id}>
                   Topik #{t.urutan}: {t.nama_topik}
@@ -1251,18 +1240,32 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
           </div>
 
           {activeTab === 'teori' && (
-            <div>
-              <select
-                value={selectedDifficulty}
-                onChange={e => setSelectedDifficulty(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 text-xs text-slate-200 font-semibold rounded-xl px-3 py-2.5 outline-none cursor-pointer"
-              >
-                <option value="all">Semua Tingkat Kesulitan</option>
-                <option value="LOTS">LOTS (Low Order Thinking Skills)</option>
-                <option value="MIDDLE">MIDDLE (Standar Prosedural)</option>
-                <option value="HOTS">HOTS (Higher Order Thinking Skills)</option>
-              </select>
-            </div>
+            <>
+              <div>
+                <select
+                  value={selectedDifficulty}
+                  onChange={e => setSelectedDifficulty(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 text-xs text-slate-200 font-semibold rounded-xl px-3 py-2.5 outline-none cursor-pointer"
+                >
+                  <option value="all">Semua Tingkat</option>
+                  <option value="LOTS">LOTS</option>
+                  <option value="MIDDLE">MIDDLE</option>
+                  <option value="HOTS">HOTS</option>
+                </select>
+              </div>
+
+              <div>
+                <select
+                  value={deliveryStatusFilter}
+                  onChange={e => setDeliveryStatusFilter(e.target.value as any)}
+                  className="w-full bg-slate-950 border border-slate-800 text-xs text-slate-200 font-semibold rounded-xl px-3 py-2.5 outline-none cursor-pointer"
+                >
+                  <option value="all">Semua Status Penyampaian</option>
+                  <option value="not_delivered">Belum Pernah Tersampaikan</option>
+                  <option value="delivered">Pernah Tersampaikan di Pertemuan</option>
+                </select>
+              </div>
+            </>
           )}
         </div>
       )}
@@ -1275,34 +1278,48 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
               Tidak ada soal teori yang cocok dengan filter.
             </div>
           ) : (
-            filteredQuestions.map((q, idx) => (
-              <div key={q.question_id} className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3 hover:border-slate-700 transition">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs font-bold text-emerald-400">Soal #{idx + 1}</span>
-                    <span className="text-xs font-semibold text-slate-400">• {getTopicName(q.topic_id)}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span
-                      className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full ${
-                        q.difficulty === 'HOTS'
-                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                          : 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
-                      }`}
-                    >
-                      Tingkat: {q.difficulty}
-                    </span>
-                    {currentUserRole === 'teacher' && (
-                      <button
-                        onClick={() => setDeletingQuestionId(q.question_id)}
-                        className="p-1 text-rose-400 hover:text-rose-300 transition cursor-pointer"
-                        title="Hapus Soal"
+            filteredQuestions.map((q, idx) => {
+              const deliveredIn = getQuestionDeliveredMeetings(q.question_id);
+              const isDelivered = deliveredIn.length > 0;
+
+              return (
+                <div key={q.question_id} className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3 hover:border-slate-700 transition">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2 flex-wrap gap-2">
+                    <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                      <span className="text-xs font-bold text-emerald-400">Soal #{idx + 1}</span>
+                      <span className="text-xs font-semibold text-slate-400">• {getTopicName(q.topic_id)}</span>
+                      {isDelivered ? (
+                        <span className="px-2 py-0.5 text-[9.5px] font-extrabold rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                          <Clock className="w-2.5 h-2.5 text-amber-400" />
+                          Pernah tersampaikan pada Pertemuan ke {deliveredIn.join(', ')}
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 text-[9.5px] font-medium rounded-md bg-slate-800/80 text-slate-400 border border-slate-700/60">
+                          Belum Pernah Tersampaikan
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span
+                        className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full ${
+                          q.difficulty === 'HOTS'
+                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                            : 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                        }`}
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
+                        Tingkat: {q.difficulty}
+                      </span>
+                      {currentUserRole === 'teacher' && (
+                        <button
+                          onClick={() => setDeletingQuestionId(q.question_id)}
+                          className="p-1 text-rose-400 hover:text-rose-300 transition cursor-pointer"
+                          title="Hapus Soal"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
 
                 <div>
                   <p className="text-sm font-semibold text-white leading-relaxed">{q.pertanyaan_id}</p>
@@ -1351,8 +1368,9 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
                   </div>
                 )}
               </div>
-            ))
-          )}
+            );
+          })
+        )}
         </div>
       )}
 
@@ -1385,12 +1403,22 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
             </div>
           </div>
 
-          {/* TOOLBAR LIPAT / BUKA SEMUA LIST */}
-          <div className="flex items-center justify-between gap-3 p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs">
+          {/* TOOLBAR LIPAT / BUKA SEMUA LIST & RESET TO DEFAULT */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs">
             <span className="font-bold text-slate-300">
               Daftar Link Soal Praktik ({filteredPractical.length} Item)
             </span>
             <div className="flex items-center space-x-2">
+              {currentUserRole === 'teacher' && (
+                <button
+                  onClick={() => setIsResetDefaultPracticalsModalOpen(true)}
+                  className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-lg transition font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
+                  title="Reset daftar modul praktik kembali ke 11 Modul Standar LKS SMK"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Reset ke Modul Standar LKS
+                </button>
+              )}
               <button
                 onClick={expandAllPractical}
                 className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
@@ -4098,6 +4126,26 @@ export const QuestionBankManager: React.FC<QuestionBankManagerProps> = ({
           </div>
         </div>
       )}
+
+      {/* CONFIRM RESET DEFAULT PRACTICALS MODAL */}
+      <ConfirmModal
+        isOpen={isResetDefaultPracticalsModalOpen}
+        title="Reset Modul Praktik ke Standar LKS"
+        message="Apakah Anda yakin ingin me-reset seluruh modul praktik kembali ke 11 Modul Standar LKS SMK (PJDM & AOL)? Data kustom akan digantikan dengan data standar LKS."
+        confirmText="Reset Modul Praktik"
+        onConfirm={handleResetDefaultPracticals}
+        onClose={() => setIsResetDefaultPracticalsModalOpen(false)}
+      />
+
+      {/* CONFIRM RESET DEFAULT TOPICS MODAL */}
+      <ConfirmModal
+        isOpen={isResetDefaultTopicsModalOpen}
+        title="Reset 60 Topik Presentasi LKS"
+        message="Apakah Anda yakin ingin me-reset seluruh topik presentasi kembali ke 60 Topik Standar LKS SMK dengan soal wawancara Middle & HOTS?"
+        confirmText="Reset 60 Topik"
+        onConfirm={handleResetDefaultTopics}
+        onClose={() => setIsResetDefaultTopicsModalOpen(false)}
+      />
 
       {/* CONFIRM DELETE QUESTION MODAL */}
       <ConfirmModal

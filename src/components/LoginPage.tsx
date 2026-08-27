@@ -18,10 +18,12 @@ import {
   Upload,
   Image as ImageIcon,
   Link as LinkIcon,
-  X
+  X,
+  Flame
 } from 'lucide-react';
 import { Student } from '../types';
 import { api } from '../services/api';
+import { loginWithGoogle, auth } from '../lib/firebase';
 
 interface LoginPageProps {
   students: Student[];

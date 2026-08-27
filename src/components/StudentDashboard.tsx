@@ -40,7 +40,8 @@ import {
   Search,
   Layers,
   Tag,
-  Info
+  Info,
+  Building2
 } from 'lucide-react';
 
 interface StudentDashboardProps {
@@ -172,45 +173,71 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
   const getTaskStatus = (task: Task) => getTaskStatusInfo(task).status;
 
-  // Sort tasks sequentially by Pertemuan (Meeting) 1 to N, then by urutan
-  const sortedTasks = [...tasks].sort((a, b) => {
-    const pertA = a.pertemuan || 1;
-    const pertB = b.pertemuan || 1;
-    if (pertA !== pertB) return pertA - pertB;
-    return (a.urutan || 0) - (b.urutan || 0);
-  });
-
-  // Calculate exact task completion statistics for overall summary
-  const totalTasksCount = tasks.length || 1;
-  const completedTasksList = sortedTasks.filter(t => getTaskStatus(t) === 'SELESAI');
-  const completedTasksCount = completedTasksList.length;
-  const overallCompletedPct = Math.round((completedTasksCount / totalTasksCount) * 100);
-
-  // Category specific calculations strictly ordered
-  const teoriTasks = tasks.filter(t => t.task_type === 'Teori');
-  const completedTeori = teoriTasks.filter(t => getTaskStatus(t) === 'SELESAI').length;
-  const teoriPct = teoriTasks.length > 0 ? Math.round((completedTeori / teoriTasks.length) * 100) : 0;
-
-  const pjdmTasks = tasks.filter(t => t.task_type === 'PJDM');
-  const completedPjdm = pjdmTasks.filter(t => getTaskStatus(t) === 'SELESAI').length;
-  const pjdmPct = pjdmTasks.length > 0 ? Math.round((completedPjdm / pjdmTasks.length) * 100) : 0;
-
-  const aolTasks = tasks.filter(t => t.task_type === 'AOL');
-  const completedAol = aolTasks.filter(t => getTaskStatus(t) === 'SELESAI').length;
-  const aolPct = aolTasks.length > 0 ? Math.round((completedAol / aolTasks.length) * 100) : 0;
-
-  const presOralTasks = tasks.filter(t => t.task_type === 'Presentasi' || t.task_type === 'Oral');
-  const completedPresOral = presOralTasks.filter(t => getTaskStatus(t) === 'SELESAI').length;
-  const presOralPct = presOralTasks.length > 0 ? Math.round((completedPresOral / presOralTasks.length) * 100) : 0;
-
   // Loaded Curriculum Meetings from teacher's configuration
-  const [curriculumMeetings] = useState<CurriculumMeeting[]>(() => {
+  const [curriculumMeetings, setCurriculumMeetings] = useState<CurriculumMeeting[]>(() => {
     try {
       const saved = localStorage.getItem('lms_curriculum_meetings');
       if (saved) return JSON.parse(saved);
     } catch (e) {}
     return INITIAL_CURRICULUM_MEETINGS;
   });
+
+  // Real-time synchronization when teacher modifies curriculum
+  React.useEffect(() => {
+    const handleCurriculumSync = () => {
+      try {
+        const saved = localStorage.getItem('lms_curriculum_meetings');
+        if (saved) setCurriculumMeetings(JSON.parse(saved));
+        else setCurriculumMeetings(INITIAL_CURRICULUM_MEETINGS);
+      } catch (e) {
+        console.error('Failed to sync student curriculum', e);
+      }
+    };
+
+    window.addEventListener('lms_data_updated', handleCurriculumSync);
+    window.addEventListener('storage', handleCurriculumSync);
+    return () => {
+      window.removeEventListener('lms_data_updated', handleCurriculumSync);
+      window.removeEventListener('storage', handleCurriculumSync);
+    };
+  }, []);
+
+  // Filter tasks strictly based on the curriculum meetings arranged by teacher (excluding draft meetings)
+  const activeCurriculumMeetings = curriculumMeetings.filter(m => m.status !== 'draft');
+  const validMeetingNumbers = new Set(activeCurriculumMeetings.map(m => m.pertemuan_ke));
+
+  // Sort tasks sequentially by Pertemuan (Meeting) 1 to N, then by urutan
+  const sortedTasks = [...tasks]
+    .filter(t => validMeetingNumbers.has(t.pertemuan || 1))
+    .sort((a, b) => {
+      const pertA = a.pertemuan || 1;
+      const pertB = b.pertemuan || 1;
+      if (pertA !== pertB) return pertA - pertB;
+      return (a.urutan || 0) - (b.urutan || 0);
+    });
+
+  // Calculate exact task completion statistics for overall summary
+  const totalTasksCount = sortedTasks.length || 1;
+  const completedTasksList = sortedTasks.filter(t => getTaskStatus(t) === 'SELESAI');
+  const completedTasksCount = completedTasksList.length;
+  const overallCompletedPct = Math.round((completedTasksCount / totalTasksCount) * 100);
+
+  // Category specific calculations strictly ordered
+  const teoriTasks = sortedTasks.filter(t => t.task_type === 'Teori');
+  const completedTeori = teoriTasks.filter(t => getTaskStatus(t) === 'SELESAI').length;
+  const teoriPct = teoriTasks.length > 0 ? Math.round((completedTeori / teoriTasks.length) * 100) : 0;
+
+  const pjdmTasks = sortedTasks.filter(t => t.task_type === 'PJDM');
+  const completedPjdm = pjdmTasks.filter(t => getTaskStatus(t) === 'SELESAI').length;
+  const pjdmPct = pjdmTasks.length > 0 ? Math.round((completedPjdm / pjdmTasks.length) * 100) : 0;
+
+  const aolTasks = sortedTasks.filter(t => t.task_type === 'AOL');
+  const completedAol = aolTasks.filter(t => getTaskStatus(t) === 'SELESAI').length;
+  const aolPct = aolTasks.length > 0 ? Math.round((completedAol / aolTasks.length) * 100) : 0;
+
+  const presOralTasks = sortedTasks.filter(t => t.task_type === 'Presentasi' || t.task_type === 'Oral');
+  const completedPresOral = presOralTasks.filter(t => getTaskStatus(t) === 'SELESAI').length;
+  const presOralPct = presOralTasks.length > 0 ? Math.round((completedPresOral / presOralTasks.length) * 100) : 0;
 
   // View layout mode: 'cards' or 'list'
   const [viewLayoutMode, setViewLayoutMode] = useState<'cards' | 'list'>('cards');
@@ -225,11 +252,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   };
 
   // Distinct list of meetings (Pertemuan) configured by teachers
-  const meetingNumbersFromCurriculum = curriculumMeetings.map(m => m.pertemuan_ke);
-  const meetingNumbersFromTasks = tasks.map(t => Number(t.pertemuan || 1));
-  const distinctPertemuan: number[] = Array.from(
-    new Set<number>([...meetingNumbersFromCurriculum, ...meetingNumbersFromTasks])
-  ).sort((a: number, b: number) => a - b);
+  const distinctPertemuan: number[] = activeCurriculumMeetings
+    .map(m => m.pertemuan_ke)
+    .sort((a, b) => a - b);
   const [selectedPertemuanFilter, setSelectedPertemuanFilter] = useState<number | 'all'>('all');
 
   // Filter pending / urgent tasks
@@ -381,18 +406,23 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
         </div>
 
-        {/* 4. Presentasi & Oral */}
+        {/* 4. Laporan Praktik LKS */}
         <div className="p-2 bg-slate-900 border border-purple-500/30 rounded-lg space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-[9px] font-extrabold text-purple-400 uppercase">4. Presentasi & Oral</span>
-            <span className="text-[8px] text-purple-300 font-bold">{completedPresOral > 0 ? 'Selesai ✅' : 'Tahap Akhir'}</span>
+            <span className="text-[9px] font-extrabold text-purple-400 uppercase">4. Laporan LKS PT</span>
+            <span className="text-[8px] text-purple-300 font-bold">Laba/Rugi & Waktu</span>
           </div>
           <div className="flex items-center justify-between text-xs font-black text-white">
-            <span>{completedPresOral}/{presOralTasks.length}</span>
-            <span className="text-[10px] text-purple-400 font-bold">{presOralPct}%</span>
+            <span className="text-[11px] text-emerald-400">PJDM & AOL</span>
+            <button
+              onClick={() => onNavigateView ? onNavigateView('lks_reports') : null}
+              className="text-[9px] text-purple-300 hover:text-white font-bold underline cursor-pointer"
+            >
+              Buka Laporan →
+            </button>
           </div>
           <div className="w-full bg-slate-950 h-1 rounded-full overflow-hidden">
-            <div className="bg-purple-400 h-full transition-all duration-300" style={{ width: `${presOralPct}%` }} />
+            <div className="bg-purple-400 h-full transition-all duration-300" style={{ width: '100%' }} />
           </div>
         </div>
       </div>
@@ -910,18 +940,18 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 </div>
               </button>
 
-              {/* Presentasi Kasus */}
+              {/* Laporan LKS PT */}
               <button
-                onClick={() => onNavigateView ? onNavigateView('presentation_module') : null}
-                className="p-1.5 bg-slate-950 hover:bg-slate-800/90 border border-amber-500/30 hover:border-amber-400 rounded-lg text-left transition cursor-pointer flex items-center space-x-2 group"
-                title="Buka Modul Presentasi & Upload Rekaman"
+                onClick={() => onNavigateView ? onNavigateView('lks_reports') : null}
+                className="p-1.5 bg-slate-950 hover:bg-slate-800/90 border border-emerald-500/30 hover:border-emerald-400 rounded-lg text-left transition cursor-pointer flex items-center space-x-2 group"
+                title="Buka Formulir & Rekapitulasi Laporan Praktik LKS (PT ...)"
               >
-                <div className="w-7 h-7 rounded-md bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
-                  <Video className="w-3.5 h-3.5 text-amber-400" />
+                <div className="w-7 h-7 rounded-md bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+                  <Building2 className="w-3.5 h-3.5 text-emerald-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="font-extrabold text-white text-[10.5px] truncate">Presentasi</div>
-                  <div className="text-[8.5px] text-amber-300 font-semibold truncate">Video & Slide</div>
+                  <div className="font-extrabold text-white text-[10.5px] truncate">Laporan LKS</div>
+                  <div className="text-[8.5px] text-emerald-300 font-semibold truncate">Laba/Rugi PT ...</div>
                 </div>
               </button>
 

@@ -1,0 +1,173 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Admin / Teacher Check
+    function isTeacher() {
+      return isSignedIn() && (
+        request.auth.token.email == 'lksakuntansinglegok@gmail.com' ||
+        request.auth.token.email == 'ratna.pertiwi@smk.belajar.id' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher')
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && (request.auth.uid == userId || isTeacher());
+    }
+
+    // 1. Users collection
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if isTeacher();
+      allow create: if isSignedIn() && request.auth.uid == userId &&
+        incoming().keys().hasAll(['user_id', 'nama', 'email', 'role']) &&
+        incoming().user_id is string && incoming().user_id.size() <= 128 &&
+        incoming().nama is string && incoming().nama.size() <= 200 &&
+        incoming().email is string && incoming().email.size() <= 150 &&
+        (incoming().role == 'student' || incoming().role == 'teacher' && isTeacher());
+      allow update: if isSignedIn() && (
+        isTeacher() ||
+        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['nama', 'avatar', 'kelas']))
+      );
+      allow delete: if isTeacher();
+    }
+
+    // 2. Students collection
+    match /students/{studentId} {
+      allow read: if isSignedIn();
+      allow write: if isTeacher();
+    }
+
+    // 3. Topics collection
+    match /topics/{topicId} {
+      allow read: if isSignedIn();
+      allow write: if isTeacher();
+    }
+
+    // 4. Tasks collection
+    match /tasks/{taskId} {
+      allow read: if isSignedIn();
+      allow write: if isTeacher();
+    }
+
+    // 5. Questions collection
+    match /questions/{questionId} {
+      allow read: if isSignedIn();
+      allow write: if isTeacher();
+    }
+
+    // 6. Submissions collection
+    match /submissions/{submissionId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() &&
+        incoming().keys().hasAll(['submission_id', 'student_id', 'task_id', 'submitted_at', 'status']) &&
+        incoming().submission_id is string && incoming().submission_id.size() <= 128 &&
+        incoming().student_id is string && incoming().student_id.size() <= 128 &&
+        incoming().task_id is string && incoming().task_id.size() <= 128 &&
+        (isTeacher() || incoming().student_id == request.auth.uid || exists(/databases/$(database)/documents/students/$(incoming().student_id)));
+      allow update: if isSignedIn() && (
+        isTeacher() ||
+        (incoming().student_id == request.auth.uid &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['link', 'catatan_siswa', 'submitted_at', 'status']))
+      );
+      allow delete: if isTeacher();
+    }
+
+    // 7. Quiz results collection
+    match /quiz_results/{resultId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() &&
+        incoming().keys().hasAll(['result_id', 'student_id', 'topic_id', 'score', 'submitted_at']) &&
+        incoming().result_id is string && incoming().result_id.size() <= 128 &&
+        incoming().student_id is string && incoming().student_id.size() <= 128 &&
+        incoming().topic_id is string && incoming().topic_id.size() <= 128;
+      allow update: if isTeacher();
+      allow delete: if isTeacher();
+    }
+
+    // 8. Oral submissions collection
+    match /oral_submissions/{oralId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() &&
+        incoming().keys().hasAll(['oral_submission_id', 'student_id', 'topic_id', 'submitted_at', 'status']) &&
+        incoming().oral_submission_id is string && incoming().oral_submission_id.size() <= 128 &&
+        incoming().student_id is string && incoming().student_id.size() <= 128;
+      allow update: if isSignedIn() && (
+        isTeacher() ||
+        (incoming().student_id == request.auth.uid &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['audio_url', 'transcript', 'duration_seconds', 'submitted_at', 'ai_score', 'ai_eval']))
+      );
+      allow delete: if isTeacher();
+    }
+
+    // 9. Presentation submissions collection
+    match /presentation_submissions/{presentationId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() &&
+        incoming().keys().hasAll(['presentation_id', 'student_id', 'topic_id', 'video_url', 'submitted_at', 'status']) &&
+        incoming().presentation_id is string && incoming().presentation_id.size() <= 128;
+      allow update: if isSignedIn() && (
+        isTeacher() ||
+        (incoming().student_id == request.auth.uid &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['video_url', 'audio_url', 'catatan', 'submitted_at']))
+      );
+      allow delete: if isTeacher();
+    }
+
+    // 10. Student Progress collection
+    match /progress/{studentId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // 11. Curriculum Meetings collection
+    match /curriculum_meetings/{meetingId} {
+      allow read: if isSignedIn();
+      allow write: if isTeacher();
+    }
+
+    // 12. App Notifications collection
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn();
+      allow create: if isTeacher();
+      allow update: if isSignedIn() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['read']);
+      allow delete: if isTeacher();
+    }
+
+    // 13. Audit Logs collection
+    match /audit_logs/{logId} {
+      allow read: if isTeacher();
+      allow create: if isSignedIn();
+      allow update, delete: if false; // Immutable audit trail
+    }
+
+    // Test connection document
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}

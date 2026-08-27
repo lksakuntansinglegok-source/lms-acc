@@ -13,7 +13,8 @@ import {
   PresentationSubmission,
   AppSettings,
   Material,
-  AppNotification
+  AppNotification,
+  LKSReportSubmission
 } from '../types';
 import { TOPICS_60, ALL_QUESTIONS_60 } from './questionBankData';
 
@@ -607,4 +608,80 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
     sender_name: 'Pelatih LKS Akuntansi'
   }
 ];
+
+export const INITIAL_LKS_REPORTS: LKSReportSubmission[] = [
+  {
+    id: 'lks_rep_01',
+    student_id: 'std_01',
+    student_name: 'Andi Saputra',
+    student_kelas: 'XI AKL 1',
+    pt_name: 'PT Jaya Sentosa Abadi',
+    tipe_pengerjaan: 'Praktik Manual (PJDM)',
+    status_laba_rugi: 'Laba Bersih',
+    nilai_laba_rugi: 148750000,
+    waktu_pengerjaan_menit: 110,
+    tanggal_pengerjaan: '2026-08-24',
+    pertemuan_ke: 2,
+    file_url_or_link: 'https://docs.google.com/spreadsheets/d/sample-pjdm-pt-jaya-sentosa/edit',
+    catatan_rekonsiliasi: 'Kertas kerja neraca lajur 10 kolom balance. Terdapat penyesuaian beban perlengkapan dan penyusutan aset tetap metode garis lurus.',
+    teacher_score: 95,
+    teacher_feedback: 'Laba bersih sesuai kunci juri LKS (Rp 148.750.000) dan waktu pengerjaan 1 jam 50 menit sangat kompetitif!',
+    status: 'reviewed',
+    created_at: '2026-08-24T10:30:00.000Z'
+  },
+  {
+    id: 'lks_rep_02',
+    student_id: 'std_01',
+    student_name: 'Andi Saputra',
+    student_kelas: 'XI AKL 1',
+    pt_name: 'PT Jaya Sentosa Abadi',
+    tipe_pengerjaan: 'Praktik AOL (Accurate Online)',
+    status_laba_rugi: 'Laba Bersih',
+    nilai_laba_rugi: 148750000,
+    waktu_pengerjaan_menit: 75,
+    tanggal_pengerjaan: '2026-08-25',
+    pertemuan_ke: 2,
+    file_url_or_link: 'https://accurate.id/app/sample-pt-jaya-sentosa-backup.gbk',
+    catatan_rekonsiliasi: 'Setup database awal, akun perkiraan, saldo awal piutang & utang, transaksi penjualan/pembelian, hingga period end dan closing akhir bulan.',
+    teacher_score: 98,
+    teacher_feedback: 'Sangat rapi dan cepat! Waktu 75 menit selesai tanpa selisih akun.',
+    status: 'reviewed',
+    created_at: '2026-08-25T11:45:00.000Z'
+  },
+  {
+    id: 'lks_rep_03',
+    student_id: 'std_02',
+    student_name: 'Siti Nurhaliza',
+    student_kelas: 'XI AKL 1',
+    pt_name: 'PT Sejahtera Logistik Mandiri',
+    tipe_pengerjaan: 'Praktik Manual (PJDM)',
+    status_laba_rugi: 'Laba Bersih',
+    nilai_laba_rugi: 215400000,
+    waktu_pengerjaan_menit: 135,
+    tanggal_pengerjaan: '2026-08-26',
+    pertemuan_ke: 3,
+    file_url_or_link: 'https://docs.google.com/spreadsheets/d/sample-pjdm-pt-sejahtera/edit',
+    catatan_rekonsiliasi: 'Rekonsiliasi bank menghasilkan saldo kas riil cocok dengan buku kas. Jurnal penyesuaian beban bunga dan adm bank selesai.',
+    status: 'pending',
+    created_at: '2026-08-26T14:20:00.000Z'
+  },
+  {
+    id: 'lks_rep_04',
+    student_id: 'std_03',
+    student_name: 'Bagus Pratama',
+    student_kelas: 'XI AKL 1',
+    pt_name: 'PT Berkah Niaga Nusantara',
+    tipe_pengerjaan: 'Praktik AOL (Accurate Online)',
+    status_laba_rugi: 'Laba Bersih',
+    nilai_laba_rugi: 89300000,
+    waktu_pengerjaan_menit: 145,
+    tanggal_pengerjaan: '2026-08-26',
+    pertemuan_ke: 1,
+    file_url_or_link: 'https://drive.google.com/file/d/sample-pt-berkah-niaga.gbk/view',
+    catatan_rekonsiliasi: 'Terdapat kendala selisih saldo awal persediaan barang dagang, namun sudah diperbaiki pada jurnal penyesuaian.',
+    status: 'pending',
+    created_at: '2026-08-26T16:00:00.000Z'
+  }
+];
+
 

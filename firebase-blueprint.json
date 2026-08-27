@@ -1,0 +1,283 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role (teacher or student)",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "maxLength": 128 },
+        "nama": { "type": "string", "maxLength": 200 },
+        "email": { "type": "string", "format": "email", "maxLength": 150 },
+        "role": { "type": "string", "enum": ["teacher", "student"] },
+        "avatar": { "type": "string", "maxLength": 500 },
+        "kelas": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["user_id", "nama", "email", "role"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Student record in the LMS",
+      "type": "object",
+      "properties": {
+        "student_id": { "type": "string", "maxLength": 128 },
+        "user_id": { "type": "string", "maxLength": 128 },
+        "nama": { "type": "string", "maxLength": 200 },
+        "kelas": { "type": "string", "maxLength": 50 },
+        "nomor_absen": { "type": "number" },
+        "email": { "type": "string", "format": "email", "maxLength": 150 },
+        "password": { "type": "string", "maxLength": 100 },
+        "password_updated_at": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["aktif", "nonaktif", "remedial"] },
+        "avatar": { "type": "string", "maxLength": 500 },
+        "level": { "type": "number" },
+        "xp": { "type": "number" },
+        "badges": { "type": "array" }
+      },
+      "required": ["student_id", "nama", "kelas", "status"]
+    },
+    "Topic": {
+      "title": "Topic",
+      "description": "Learning topic module in accounting",
+      "type": "object",
+      "properties": {
+        "topic_id": { "type": "string", "maxLength": 128 },
+        "nama_topik": { "type": "string", "maxLength": 250 },
+        "deskripsi": { "type": "string", "maxLength": 2000 },
+        "urutan": { "type": "number" },
+        "status": { "type": "string", "enum": ["aktif", "draft"] },
+        "passing_grade": { "type": "number" }
+      },
+      "required": ["topic_id", "nama_topik", "urutan", "status"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Accounting task or assignment",
+      "type": "object",
+      "properties": {
+        "task_id": { "type": "string", "maxLength": 128 },
+        "topic_id": { "type": "string", "maxLength": 128 },
+        "task_type": { "type": "string", "enum": ["PJDM", "AOL", "Teori", "Presentasi", "Oral"] },
+        "judul": { "type": "string", "maxLength": 250 },
+        "deskripsi": { "type": "string", "maxLength": 5000 },
+        "deadline": { "type": "string", "maxLength": 50 },
+        "urutan": { "type": "number" },
+        "pertemuan": { "type": "number" },
+        "pertemuan_judul": { "type": "string", "maxLength": 250 },
+        "wajib": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["belum_mulai", "sedang_dikerjakan", "selesai", "terlambat"] },
+        "max_score": { "type": "number" }
+      },
+      "required": ["task_id", "topic_id", "task_type", "judul", "deadline"]
+    },
+    "Question": {
+      "title": "Question",
+      "description": "Bilingual accounting theory question",
+      "type": "object",
+      "properties": {
+        "question_id": { "type": "string", "maxLength": 128 },
+        "topic_id": { "type": "string", "maxLength": 128 },
+        "difficulty": { "type": "string", "enum": ["LOTS", "MIDDLE", "HOTS"] },
+        "pertanyaan_id": { "type": "string", "maxLength": 5000 },
+        "question_en": { "type": "string", "maxLength": 5000 },
+        "option_a": { "type": "string", "maxLength": 2000 },
+        "option_b": { "type": "string", "maxLength": 2000 },
+        "option_c": { "type": "string", "maxLength": 2000 },
+        "option_d": { "type": "string", "maxLength": 2000 },
+        "correct_answer": { "type": "string", "enum": ["A", "B", "C", "D"] },
+        "explanation_id": { "type": "string", "maxLength": 5000 },
+        "explanation_en": { "type": "string", "maxLength": 5000 }
+      },
+      "required": ["question_id", "topic_id", "difficulty", "pertanyaan_id", "correct_answer"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "PJDM or AOL task submission",
+      "type": "object",
+      "properties": {
+        "submission_id": { "type": "string", "maxLength": 128 },
+        "student_id": { "type": "string", "maxLength": 128 },
+        "task_id": { "type": "string", "maxLength": 128 },
+        "topic_id": { "type": "string", "maxLength": 128 },
+        "link": { "type": "string", "maxLength": 1000 },
+        "catatan_siswa": { "type": "string", "maxLength": 2000 },
+        "submitted_at": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["belum_dikumpulkan", "sudah_dikumpulkan", "sudah_dinilai", "terlambat"] },
+        "score": { "type": "number" },
+        "feedback": { "type": "string", "maxLength": 3000 }
+      },
+      "required": ["submission_id", "student_id", "task_id", "submitted_at", "status"]
+    },
+    "QuizResult": {
+      "title": "QuizResult",
+      "description": "Theory quiz submission result",
+      "type": "object",
+      "properties": {
+        "result_id": { "type": "string", "maxLength": 128 },
+        "student_id": { "type": "string", "maxLength": 128 },
+        "topic_id": { "type": "string", "maxLength": 128 },
+        "score": { "type": "number" },
+        "total_questions": { "type": "number" },
+        "correct": { "type": "number" },
+        "wrong": { "type": "number" },
+        "duration_seconds": { "type": "number" },
+        "submitted_at": { "type": "string", "maxLength": 50 },
+        "middle_score": { "type": "number" },
+        "hots_score": { "type": "number" },
+        "remedial_required": { "type": "boolean" }
+      },
+      "required": ["result_id", "student_id", "topic_id", "score", "submitted_at"]
+    },
+    "OralSubmission": {
+      "title": "OralSubmission",
+      "description": "AI oral interview recording and evaluation submission",
+      "type": "object",
+      "properties": {
+        "oral_submission_id": { "type": "string", "maxLength": 128 },
+        "student_id": { "type": "string", "maxLength": 128 },
+        "topic_id": { "type": "string", "maxLength": 128 },
+        "oral_question_id": { "type": "string", "maxLength": 128 },
+        "audio_url": { "type": "string", "maxLength": 1000 },
+        "transcript": { "type": "string", "maxLength": 5000 },
+        "duration_seconds": { "type": "number" },
+        "submitted_at": { "type": "string", "maxLength": 50 },
+        "ai_score": { "type": "number" },
+        "teacher_score": { "type": "number" },
+        "feedback": { "type": "string", "maxLength": 3000 },
+        "status": { "type": "string", "enum": ["pending", "reviewed"] }
+      },
+      "required": ["oral_submission_id", "student_id", "topic_id", "submitted_at", "status"]
+    },
+    "PresentationSubmission": {
+      "title": "PresentationSubmission",
+      "description": "Video presentation submission",
+      "type": "object",
+      "properties": {
+        "presentation_id": { "type": "string", "maxLength": 128 },
+        "student_id": { "type": "string", "maxLength": 128 },
+        "topic_id": { "type": "string", "maxLength": 128 },
+        "video_url": { "type": "string", "maxLength": 1000 },
+        "audio_url": { "type": "string", "maxLength": 1000 },
+        "catatan": { "type": "string", "maxLength": 2000 },
+        "submitted_at": { "type": "string", "maxLength": 50 },
+        "score": { "type": "number" },
+        "feedback": { "type": "string", "maxLength": 3000 },
+        "status": { "type": "string", "enum": ["pending", "reviewed"] }
+      },
+      "required": ["presentation_id", "student_id", "topic_id", "video_url", "submitted_at", "status"]
+    },
+    "StudentProgress": {
+      "title": "StudentProgress",
+      "description": "Aggregated student learning path progress",
+      "type": "object",
+      "properties": {
+        "student_id": { "type": "string", "maxLength": 128 },
+        "pjdm_progress": { "type": "number" },
+        "aol_progress": { "type": "number" },
+        "theory_progress": { "type": "number" },
+        "presentation_progress": { "type": "number" },
+        "oral_progress": { "type": "number" },
+        "overall_progress": { "type": "number" },
+        "remedial_count": { "type": "number" }
+      },
+      "required": ["student_id", "overall_progress"]
+    },
+    "CurriculumMeeting": {
+      "title": "CurriculumMeeting",
+      "description": "12-Meeting curriculum sequence syllabus configured by teacher",
+      "type": "object",
+      "properties": {
+        "meeting_id": { "type": "string", "maxLength": 128 },
+        "pertemuan_ke": { "type": "number" },
+        "judul_pertemuan": { "type": "string", "maxLength": 250 },
+        "deskripsi": { "type": "string", "maxLength": 2000 },
+        "topic_id": { "type": "string", "maxLength": 128 },
+        "target_durasi_menit": { "type": "number" },
+        "status": { "type": "string", "enum": ["aktif", "terjadwal", "selesai", "draft"] }
+      },
+      "required": ["meeting_id", "pertemuan_ke", "judul_pertemuan", "topic_id", "status"]
+    },
+    "AppNotification": {
+      "title": "AppNotification",
+      "description": "In-app alerts and teacher feedback notifications",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "student_id": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "enum": ["new_task", "task_feedback", "oral_feedback", "presentation_feedback", "announcement", "remedial_alert"] },
+        "title": { "type": "string", "maxLength": 250 },
+        "message": { "type": "string", "maxLength": 2000 },
+        "created_at": { "type": "string", "maxLength": 50 },
+        "read": { "type": "boolean" }
+      },
+      "required": ["id", "student_id", "type", "title", "message", "created_at", "read"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Teacher and student activity audit trail",
+      "type": "object",
+      "properties": {
+        "log_id": { "type": "string", "maxLength": 128 },
+        "user_id": { "type": "string", "maxLength": 128 },
+        "user_name": { "type": "string", "maxLength": 200 },
+        "aktivitas": { "type": "string", "maxLength": 250 },
+        "waktu": { "type": "string", "maxLength": 50 },
+        "detail": { "type": "string", "maxLength": 2000 }
+      },
+      "required": ["log_id", "user_id", "user_name", "aktivitas", "waktu"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile with role definition (teacher/student)"
+    },
+    "/students/{studentId}": {
+      "schema": "Student",
+      "description": "List and records of SMK students"
+    },
+    "/topics/{topicId}": {
+      "schema": "Topic",
+      "description": "Accounting topics"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Accounting tasks and assignments"
+    },
+    "/questions/{questionId}": {
+      "schema": "Question",
+      "description": "Bilingual theory multiple choice bank questions"
+    },
+    "/submissions/{submissionId}": {
+      "schema": "Submission",
+      "description": "PJDM/AOL student task submissions"
+    },
+    "/quiz_results/{resultId}": {
+      "schema": "QuizResult",
+      "description": "Student quiz results"
+    },
+    "/oral_submissions/{oralId}": {
+      "schema": "OralSubmission",
+      "description": "Student oral interview submissions"
+    },
+    "/presentation_submissions/{presentationId}": {
+      "schema": "PresentationSubmission",
+      "description": "Student video presentation submissions"
+    },
+    "/progress/{studentId}": {
+      "schema": "StudentProgress",
+      "description": "Aggregated student progress"
+    },
+    "/curriculum_meetings/{meetingId}": {
+      "schema": "CurriculumMeeting",
+      "description": "12-Meeting curriculum syllabus"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "AppNotification",
+      "description": "User in-app notifications"
+    },
+    "/audit_logs/{logId}": {
+      "schema": "AuditLog",
+      "description": "System and activity audit logs"
+    }
+  }
+}
